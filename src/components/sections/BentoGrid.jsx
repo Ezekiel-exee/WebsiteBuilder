@@ -76,7 +76,9 @@ function BentoTiltCard({ item, featured }) {
   const [tilt, setTilt] = useState({ x: 0, y: 0, glowX: 50, glowY: 50 });
 
   const handleMove = (e) => {
-    const rect = ref.current.getBoundingClientRect();
+    const node = ref.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width;
     const py = (e.clientY - rect.top) / rect.height;
     setTilt({ x: (0.5 - py) * 10, y: (px - 0.5) * 10, glowX: px * 100, glowY: py * 100 });

@@ -53,11 +53,18 @@ export default function ExperienceTimeline() {
     let targetProgress = -1;
     const updateProgress = () => {
       frame = 0;
-      const positions = nodeRefs.current.slice(0, EXPERIENCE_TIMELINE_ITEMS.length).map((node) => {
+      const nodes = nodeRefs.current.slice(0, EXPERIENCE_TIMELINE_ITEMS.length);
+      if (
+        !timeline.isConnected ||
+        nodes.length !== EXPERIENCE_TIMELINE_ITEMS.length ||
+        nodes.some((node) => !node?.isConnected)
+      ) {
+        return;
+      }
+      const positions = nodes.map((node) => {
         const bounds = node.getBoundingClientRect();
         return bounds.top + frameWindow.scrollY + bounds.height / 2;
       });
-      if (positions.length !== EXPERIENCE_TIMELINE_ITEMS.length) return;
 
       const timelineTop = timeline.getBoundingClientRect().top + frameWindow.scrollY;
       const nextTrack = {
