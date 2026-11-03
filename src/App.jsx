@@ -28,7 +28,8 @@ export default function App() {
 
   const navigate = useCallback((next) => {
     window.location.hash = `/${next.type}/${next.id}`;
-    window.scrollTo({ top: 0 });
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    window.scrollTo({ top: 0, behavior });
   }, []);
 
   const openSection = useCallback(

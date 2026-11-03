@@ -18,7 +18,6 @@ function ShowcaseCard({ id, item }) {
   const codePromise = useRef(null);
   const Component = item.Component;
   const width = DEVICES.find((d) => d.id === device).width;
-  const scrollDriven = id === "experience-timeline" || id === "glass-dock";
 
   useEffect(() => {
     if (view !== "preview" || previewReady) return undefined;
@@ -123,8 +122,8 @@ function ShowcaseCard({ id, item }) {
             <PreviewFrame
               key={reloadKey}
               width={width}
-              autoHeight={!scrollDriven}
-              height={scrollDriven ? "min(78vh, 900px)" : undefined}
+              autoHeight={false}
+              height="min(78vh, 900px)"
               title={`${item.name} preview`}
             >
               {previewReady ? (
@@ -153,7 +152,7 @@ function ShowcaseCard({ id, item }) {
       <footer className="flex items-center justify-between border-t border-white/5 px-5 py-2.5 text-xs text-zinc-500">
         <span className="font-mono">{item.exportName}.jsx</span>
         <span>
-          {scrollDriven ? "Scroll inside preview · " : ""}
+          Scroll inside preview ·{" "}
           {lines === null ? "Source loads on demand · " : `${lines} lines · `}
           React + Tailwind · zero dependencies
         </span>

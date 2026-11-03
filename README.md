@@ -12,6 +12,7 @@ npm run build    # production build in dist/
 
 - **Live, responsive previews.** Each preview renders inside an iframe, so Tailwind breakpoints respond to the Desktop / Tablet / Mobile toggle the same way they would on a real device.
 - **On-demand loading.** Component previews are fetched as they approach the viewport; template modules load only when selected, and source text loads only when opened or copied.
+- **Stable scrolling.** Component previews use consistent, scrollable viewports so lazy-loading does not resize cards; sidebar navigation scrolls smoothly and respects reduced-motion settings.
 - **One-click copy.** Every component card has a **Copy Code** button that copies the exact source file being rendered. It shows a "Copied!" state and a toast.
 - **Full-page templates.** **Copy Full Page** merges a template and all of its sections into one self-contained file. Each section in a template can also be copied on its own.
 - **Featured 3D Depth Carousel.** Shows five slides at once on an infinite loop. The center slide is in focus, and the slides on either side are scaled down, rotated, and dimmed to create depth. It supports autoplay with pause, arrow buttons, dots, drag and swipe, keyboard navigation, and clicking a side slide to focus it.
