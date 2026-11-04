@@ -11,7 +11,7 @@ const GAMES = [
   { id: "bomberman", name: "Bomberman", icon: "bomb", description: "NES-style stages on a scrolling field: find the hidden exit, blast every enemy, and collect Fire, Bomb, Speed and more.", controls: "WASD to move · Space bomb · K detonate" },
   { id: "pacman", name: "Pac-Man", icon: "pacman", description: "The classic 28×31 maze with four ghost personalities, scatter and chase waves, fruit, and faster levels.", controls: "WASD to move · P to pause" },
   { id: "snake", name: "Snake", icon: "snake", description: "Smooth snake with combos, bonus bytes, power-ups, obstacle layouts, and level goals.", controls: "WASD to move · P to pause" },
-  { id: "code-arena", name: "Byte Brawl", icon: "platform", description: "Gun Mayhem-style brawler with a 15-mission campaign, bosses, online rooms, and power-up drops. Every 3 levels a new enemy type with its own skill appears.", controls: "A/D move · W jump · S drop · J fire · P pause" },
+  { id: "code-arena", name: "Byte Brawl", icon: "platform", description: "Gun Mayhem-style brawler with a 30-mission campaign, bosses, online rooms, and power-up drops. Every 3 levels a new enemy type with its own skill appears — 13 in all.", controls: "A/D move · W jump · S drop · J fire · P pause" },
 ];
 
 const DIFFICULTIES = [

@@ -18,6 +18,13 @@ export const ENEMY_TYPES = [
   { skill: "blink", name: "PHANTOM", color: "#c084fc", blurb: "Teleports next to you and back to safety." },
   { skill: "heavy", name: "TITAN", color: "#2dd4bf", blurb: "Armored: takes half knockback, moves slower." },
   { skill: "overclock", name: "OVERCLOCK", color: "#f472b6", blurb: "Rapid fire, triple jump, regenerates damage." },
+  { skill: "mirror", name: "MIRROR", color: "#67e8f9", blurb: "Reflects bullets hitting its front — hit it from behind." },
+  { skill: "magnet", name: "MAGNET", color: "#e879f9", blurb: "Pulls you toward it. Keep your distance." },
+  { skill: "leech", name: "LEECH", color: "#4ade80", blurb: "Heals itself every time it lands a hit." },
+  { skill: "sentry", name: "SENTRY", color: "#ef4444", blurb: "Holds its ground, locks a laser, then fires a heavy shot." },
+  { skill: "miner", name: "MINER", color: "#facc15", blurb: "Drops proximity mines across the platforms." },
+  { skill: "rage", name: "BERSERKER", color: "#f97316", blurb: "Faster and harder-hitting the more damage it takes." },
+  { skill: "reboot", name: "REBOOT", color: "#cbd5e1", blurb: "Comes back once with a shield after its last stock." },
 ];
 
 export function tierForLevel(level) {
@@ -125,7 +132,22 @@ export const CAMPAIGN = [
   { title: "BOSS: Memory Leak", map: 3, brief: "A teleporting launcher boss with a Phantom minion.", bots: [{ stocks: 5, boss: true, weapon: "launcher" }, { stocks: 2 }] },
   { title: "Monolith", map: 6, brief: "New enemy: Titans take half the knockback.", bots: [{ stocks: 2, weapon: "shotgun" }, { stocks: 2, weapon: "shotgun" }] },
   { title: "Legacy Code", map: 2, brief: "Three armored Titans with heavy weapons.", bots: [{ stocks: 2, weapon: "launcher" }, { stocks: 2, weapon: "shotgun" }, { stocks: 2, weapon: "smg" }] },
-  { title: "FINAL BOSS: Kernel Panic", map: 1, brief: "An armored launcher boss with a Phantom and a Firewall.", bots: [{ stocks: 6, boss: true, weapon: "launcher" }, { stocks: 2, tier: 3 }, { stocks: 2, tier: 2 }] },
+  { title: "BOSS: Kernel Panic", map: 1, brief: "An armored launcher boss with a Phantom and a Firewall.", bots: [{ stocks: 6, boss: true, weapon: "launcher" }, { stocks: 2, tier: 3 }, { stocks: 2, tier: 2 }] },
+  { title: "Clock Cycle", map: 2, brief: "New enemy: Overclock bots fire fast and triple jump.", bots: [{ stocks: 2 }, { stocks: 2 }] },
+  { title: "Hot Path", map: 5, brief: "Three Overclock bots, SMGs drawn.", bots: [{ stocks: 2, weapon: "smg" }, { stocks: 2, weapon: "smg" }, { stocks: 2 }] },
+  { title: "BOSS: Hyperthread", map: 3, brief: "A regenerating SMG boss with an Overclock minion.", bots: [{ stocks: 5, boss: true, weapon: "smg" }, { stocks: 2 }] },
+  { title: "Reflection", map: 1, brief: "New enemy: Mirrors reflect shots at their front. Hit them from behind.", bots: [{ stocks: 2 }, { stocks: 2 }] },
+  { title: "Echo Chamber", map: 6, brief: "Two Mirrors with shotguns on tiny platforms.", bots: [{ stocks: 3, weapon: "shotgun" }, { stocks: 3, weapon: "shotgun" }] },
+  { title: "BOSS: Mirror Mirror", map: 0, brief: "A mirrored boss. Rockets and shots from behind still hurt.", bots: [{ stocks: 5, boss: true, weapon: "launcher" }, { stocks: 2 }] },
+  { title: "Pull Request", map: 4, brief: "New enemy: Magnets drag you toward their guns.", bots: [{ stocks: 2, weapon: "shotgun" }, { stocks: 2 }] },
+  { title: "Merge Magnet", map: 2, brief: "Three Magnets pull from every side.", bots: [{ stocks: 2 }, { stocks: 2 }, { stocks: 2, weapon: "shotgun" }] },
+  { title: "BOSS: Attractor", map: 5, brief: "A magnetic shotgun boss and a minion.", bots: [{ stocks: 5, boss: true, weapon: "shotgun" }, { stocks: 2 }] },
+  { title: "Memory Hog", map: 3, brief: "New enemy: Leeches heal every time they hit you.", bots: [{ stocks: 2 }, { stocks: 2 }] },
+  { title: "Resource Drain", map: 6, brief: "Three Leeches fight over the grid.", bots: [{ stocks: 2, weapon: "smg" }, { stocks: 2 }, { stocks: 2 }] },
+  { title: "BOSS: Siphon", map: 1, brief: "A life-draining boss. Don't trade hits.", bots: [{ stocks: 5, boss: true, weapon: "sniper" }, { stocks: 2 }] },
+  { title: "Watchtower", map: 0, brief: "New enemy: Sentries lock a laser before a heavy shot. Break the line.", bots: [{ stocks: 2 }, { stocks: 2 }] },
+  { title: "Crosshair", map: 6, brief: "Three Sentries cover the grid.", bots: [{ stocks: 2 }, { stocks: 2 }, { stocks: 2 }] },
+  { title: "FINAL BOSS: Root Access", map: 4, brief: "A sentry boss with Miner and Berserker help.", bots: [{ stocks: 6, boss: true, weapon: "sniper" }, { stocks: 2, tier: 10 }, { stocks: 2, tier: 11 }] },
 ];
 
 const AI_PROFILES = {
@@ -140,9 +162,10 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const centerX = (fighter) => fighter.x + FIGHTER_W / 2;
 
 function createFighter(id, name, color, team, stocks, spawn, ai, spec = {}) {
-  const weapon = spec.weapon || "pistol";
-  const ammo = spec.boss ? Infinity : WEAPONS[weapon].ammo;
   const skill = spec.skill || "none";
+  const defaultWeapon = skill === "sentry" ? "sniper" : "pistol";
+  const weapon = spec.weapon || defaultWeapon;
+  const ammo = spec.boss || skill === "sentry" ? Infinity : WEAPONS[weapon].ammo;
   const heavy = skill === "heavy";
   return {
     id,
@@ -156,6 +179,9 @@ function createFighter(id, name, color, team, stocks, spawn, ai, spec = {}) {
     skill,
     typeIndex: spec.typeIndex || 0,
     skillTimer: 2 + Math.random() * 2,
+    charge: 0,
+    forceFire: false,
+    rebooted: false,
     shield: skill === "shield" ? 3 : 0,
     maxStocks: stocks + 2,
     buffs: { sudo: 0, turbo: 0, loop: 0, lag: 0 },
@@ -222,7 +248,7 @@ export function createBrawl(level, difficulty, setup = { mode: "versus", stage: 
     const name = spec.boss ? `BOSS ${type.name}` : roster.length > 1 ? `${type.name}_${index + 1}` : type.name;
     fighters.push(createFighter(10 + index, name, spec.boss ? BOSS_COLOR : type.color, 1, spec.stocks, map.spawns[(humans.length + index) % map.spawns.length], ai, { ...spec, skill: type.skill, typeIndex }));
   });
-  return { map, fighters, bullets: [], crates: [], fx: [], clock: 0, crateTimer: 2.5, level, difficulty, mode: setup.mode, mission, rivals, online, me: 0, countdown: 0 };
+  return { map, fighters, bullets: [], crates: [], mines: [], fx: [], clock: 0, crateTimer: 2.5, level, difficulty, mode: setup.mode, mission, rivals, online, me: 0, countdown: 0 };
 }
 
 export function enemyTypes(world) {
@@ -271,7 +297,8 @@ function applyKnock(world, fighter, dirX, dirY, knockForce, damage, attacker) {
     return;
   }
   const sudoBoost = attacker && attacker.buffs.sudo > 0 ? 1.8 : 1;
-  const knock = knockForce * sudoBoost * fighter.knockResist;
+  const rageBoost = attacker && attacker.skill === "rage" ? 1 + 0.7 * rageOf(attacker) : 1;
+  const knock = knockForce * sudoBoost * rageBoost * fighter.knockResist;
   fighter.damage += damage * (sudoBoost > 1 ? 1.5 : 1);
   const scale = 1 + fighter.damage / 65;
   fighter.vx = clamp(fighter.vx + dirX * knock * scale, -1400, 1400);
@@ -282,8 +309,16 @@ function applyKnock(world, fighter, dirX, dirY, knockForce, damage, attacker) {
     fighter.lastAttacker = attacker.id;
     fighter.lastAttackedAt = world.clock;
     if (attacker.human) attacker.points += 5;
+    if (attacker.skill === "leech" && attacker.damage > 0) {
+      attacker.damage = Math.max(0, attacker.damage - damage * 2);
+      pushFx(world, { type: "text", x: centerX(attacker), y: attacker.y - 12, text: "DRAIN", color: attacker.color, t: 0, life: 0.7 });
+    }
   }
   burst(world, centerX(fighter), fighter.y + 16, fighter.color, 4, 140);
+}
+
+function rageOf(fighter) {
+  return fighter.skill === "rage" ? clamp(fighter.damage / 120, 0, 1) : 0;
 }
 
 function explode(world, bullet) {
@@ -318,12 +353,20 @@ function knockOut(world, fighter) {
   }
   fighter.lastAttacker = null;
   if (!fighter.human && Math.random() < (fighter.boss ? 1 : 0.4)) spawnCrate(world, pickPowerup());
+  let revived = false;
+  if (fighter.stocks <= 0 && fighter.skill === "reboot" && !fighter.rebooted) {
+    fighter.rebooted = true;
+    fighter.stocks = 1;
+    revived = true;
+    pushFx(world, { type: "text", x: edgeX, y: Math.min(edgeY + 24, ARENA_H - 20), text: "REBOOT!", color: fighter.color, t: 0, life: 1.4 });
+  }
   if (fighter.stocks <= 0) {
     fighter.vx = 0;
     fighter.vy = 0;
     return;
   }
   for (const id of BUFF_IDS) fighter.buffs[id] = 0;
+  fighter.charge = 0;
   fighter.x = spawnPoint(world) - FIGHTER_W / 2;
   fighter.y = -60;
   fighter.vx = 0;
@@ -333,7 +376,7 @@ function knockOut(world, fighter) {
   fighter.ammo = fighter.loadout.ammo;
   fighter.invuln = 2.5;
   fighter.jumps = fighter.maxJumps;
-  fighter.shield = fighter.skill === "shield" ? 3 : 0;
+  fighter.shield = fighter.skill === "shield" || revived ? 3 : 0;
 }
 
 function fireWeapon(world, fighter, spread) {
@@ -373,11 +416,12 @@ function updateFighter(world, fighter, control, dt) {
   const buffs = fighter.buffs;
   for (const id of BUFF_IDS) buffs[id] = Math.max(0, buffs[id] - dt);
   fighter.invuln = Math.max(0, fighter.invuln - dt);
-  fighter.cooldown = Math.max(0, fighter.cooldown - dt * (buffs.turbo > 0 ? 1.8 : 1) * (buffs.lag > 0 ? 0.5 : 1));
+  const rage = rageOf(fighter);
+  fighter.cooldown = Math.max(0, fighter.cooldown - dt * (buffs.turbo > 0 ? 1.8 : 1) * (buffs.lag > 0 ? 0.5 : 1) * (1 + rage * 0.8));
   fighter.flash = Math.max(0, fighter.flash - dt);
   fighter.drop = Math.max(0, fighter.drop - dt);
 
-  const speedScale = (fighter.ai ? fighter.ai.speed : 1) * (buffs.turbo > 0 ? 1.35 : 1) * (buffs.lag > 0 ? 0.5 : 1);
+  const speedScale = (fighter.ai ? fighter.ai.speed : 1) * (buffs.turbo > 0 ? 1.35 : 1) * (buffs.lag > 0 ? 0.5 : 1) * (1 + rage * 0.55);
   const maxSpeed = MOVE_SPEED * speedScale;
   const dir = control.dir;
   if (dir) fighter.facing = dir;
@@ -517,6 +561,13 @@ function thinkBot(world, fighter, dt) {
     if (canLeap(world.map, fighter, control.dir)) control.jump = true;
     else control.dir = 0;
   }
+  if (fighter.skill === "sentry") {
+    control.dir = 0;
+    control.jump = false;
+    control.down = false;
+    control.fire = fighter.forceFire;
+    fighter.forceFire = false;
+  }
   return control;
 }
 
@@ -535,6 +586,16 @@ function updateBullets(world, dt) {
       for (const fighter of world.fighters) {
         if (fighter.stocks <= 0 || fighter.team === bullet.team || fighter.invuln > 0) continue;
         if (right > fighter.x && left < fighter.x + FIGHTER_W && bullet.y + 2 > fighter.y && bullet.y - 2 < fighter.y + FIGHTER_H) {
+          if (fighter.skill === "mirror" && !bullet.explosive && sign(bullet.vx) === -fighter.facing) {
+            bullet.vx = -bullet.vx;
+            bullet.team = fighter.team;
+            bullet.owner = fighter.id;
+            bullet.color = fighter.color;
+            bullet.life = Math.max(bullet.life, 0.5);
+            bullet.x = fighter.facing > 0 ? fighter.x + FIGHTER_W + 4 : fighter.x - 4;
+            pushFx(world, { type: "ring", x: bullet.x, y: bullet.y, r: 0, max: 16, t: 0, life: 0.2, color: fighter.color });
+            break;
+          }
           if (bullet.explosive) {
             explode(world, bullet);
             exploded = true;
@@ -684,6 +745,70 @@ function updateSkills(world, fighter, dt) {
       fighter.skillTimer = (4.5 + Math.random() * 1.5) * hard;
     }
   }
+  if (fighter.skill === "magnet") {
+    for (const human of world.fighters) {
+      if (!human.human || human.stocks <= 0 || human.team === fighter.team) continue;
+      const dx = centerX(fighter) - centerX(human);
+      const gap = Math.abs(dx);
+      if (gap > 34 && gap < 280 && Math.abs(fighter.y - human.y) < 130) human.x += sign(dx) * 120 * (1 - gap / 320) * dt;
+    }
+  }
+  if (fighter.skill === "sentry") {
+    const dx = centerX(target) - centerX(fighter);
+    const aligned = Math.abs(target.y - fighter.y) < 40 && Math.abs(dx) < 760 && target.invuln <= 0 && fighter.grounded;
+    if (aligned) {
+      fighter.facing = sign(dx) || fighter.facing;
+      fighter.ai.face = fighter.facing;
+      fighter.charge += dt;
+      const need = world.difficulty === "hard" ? 0.7 : world.difficulty === "medium" ? 0.95 : 1.25;
+      if (fighter.charge >= need && fighter.cooldown <= 0) {
+        fighter.forceFire = true;
+        fighter.charge = 0;
+      }
+    } else {
+      fighter.charge = Math.max(0, fighter.charge - dt * 2);
+    }
+  }
+  if (fighter.skill === "miner" && fighter.skillTimer <= 0 && fighter.grounded) {
+    const own = world.mines.filter((mine) => mine.owner === fighter.id);
+    if (own.length >= 4) world.mines.splice(world.mines.indexOf(own[0]), 1);
+    world.mines.push({ x: centerX(fighter), y: fighter.y + FIGHTER_H, arm: 0.9, ttl: 16, team: fighter.team, owner: fighter.id });
+    fighter.skillTimer = 2.8 + Math.random() * 1.5;
+  }
+}
+
+function updateMines(world, dt) {
+  for (let index = world.mines.length - 1; index >= 0; index -= 1) {
+    const mine = world.mines[index];
+    mine.arm -= dt;
+    mine.ttl -= dt;
+    let triggered = false;
+    if (mine.arm <= 0) {
+      for (const fighter of world.fighters) {
+        if (fighter.stocks <= 0 || fighter.team === mine.team || fighter.invuln > 0) continue;
+        const feet = fighter.y + FIGHTER_H;
+        if (Math.abs(centerX(fighter) - mine.x) < 14 && feet >= mine.y - 6 && feet <= mine.y + 14) {
+          triggered = true;
+          break;
+        }
+      }
+    }
+    if (triggered) {
+      pushFx(world, { type: "ring", x: mine.x, y: mine.y - 6, r: 0, max: 80, t: 0, life: 0.35, color: "#facc15" });
+      burst(world, mine.x, mine.y - 6, "#facc15", 10, 240);
+      const owner = world.fighters.find((fighter) => fighter.id === mine.owner);
+      for (const fighter of world.fighters) {
+        if (fighter.stocks <= 0 || fighter.team === mine.team || fighter.invuln > 0) continue;
+        const dx = centerX(fighter) - mine.x;
+        const dy = fighter.y + FIGHTER_H / 2 - mine.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance < 80) applyKnock(world, fighter, sign(dx) || 1, distance ? dy / distance : -1, 520, 12, owner);
+      }
+      world.mines.splice(index, 1);
+    } else if (mine.ttl <= 0) {
+      world.mines.splice(index, 1);
+    }
+  }
 }
 
 export function stepBrawl(world, dt, controls) {
@@ -694,6 +819,7 @@ export function stepBrawl(world, dt, controls) {
     updateFighter(world, fighter, fighter.human ? controls[fighter.id] || IDLE_CONTROL : thinkBot(world, fighter, dt), dt);
   }
   updateBullets(world, dt);
+  updateMines(world, dt);
   updateCrates(world, dt);
   updateFx(world, dt);
 }
@@ -751,9 +877,10 @@ export function snapshotBrawl(world) {
   return {
     c: Math.round(world.clock * 100) / 100,
     cd: world.countdown > 0 ? Math.ceil(world.countdown) : 0,
-    f: world.fighters.map((f) => [f.id, round1(f.x), round1(f.y), Math.round(f.vx), Math.round(f.vy), f.facing, f.stocks, Math.round(f.damage), f.weapon, Number.isFinite(f.ammo) ? f.ammo : -1, f.shield, f.invuln > 0 ? 1 : 0, f.flash > 0 ? 1 : 0, f.cooldown > 0 ? Math.round(f.cooldown * 100) : 0, f.grounded ? 1 : 0, f.points, f.kos, BUFF_IDS.map((id) => round1(f.buffs[id]))]),
+    f: world.fighters.map((f) => [f.id, round1(f.x), round1(f.y), Math.round(f.vx), Math.round(f.vy), f.facing, f.stocks, Math.round(f.damage), f.weapon, Number.isFinite(f.ammo) ? f.ammo : -1, f.shield, f.invuln > 0 ? 1 : 0, f.flash > 0 ? 1 : 0, f.cooldown > 0 ? Math.round(f.cooldown * 100) : 0, f.grounded ? 1 : 0, f.points, f.kos, BUFF_IDS.map((id) => round1(f.buffs[id])), Math.round(f.charge * 100) / 100, f.rebooted ? 1 : 0]),
     b: world.bullets.map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.owner, b.explosive ? 1 : 0]),
     k: world.crates.map((crate) => [Math.round(crate.x), Math.round(crate.y), crate.item, Math.round(crate.ttl)]),
+    mn: world.mines.map((mine) => [Math.round(mine.x), Math.round(mine.y), mine.arm > 0 ? 0 : 1]),
     x: world.fx.slice(0, 24).map((fx) => [fx.type === "ring" ? 0 : fx.type === "spark" ? 1 : 2, Math.round(fx.x), Math.round(fx.y), fx.type === "ring" ? Math.round(fx.max) : Math.round(fx.vx || 0), fx.type === "spark" ? Math.round(fx.vy) : 0, Math.round(fx.t * 100), Math.round(fx.life * 100), fx.color, fx.text || ""]),
   };
 }
@@ -783,6 +910,7 @@ export function createViewWorld(start) {
     })),
     bullets: [],
     crates: [],
+    mines: [],
     fx: [],
     clock: 0,
     level: start.level,
@@ -826,10 +954,13 @@ export function applySnapshot(view, snap, now) {
     BUFF_IDS.forEach((id, buffIndex) => {
       fighter.buffs[id] = row[17][buffIndex];
     });
+    fighter.charge = row[18] || 0;
+    fighter.rebooted = Boolean(row[19]);
   }
   const colors = new Map(view.fighters.map((fighter) => [fighter.id, fighter.color]));
   view.bullets = snap.b.map((row) => ({ x: row[0], y: row[1], vx: row[2], vy: row[3], color: colors.get(row[4]) || "#ffffff", explosive: Boolean(row[5]) }));
   view.crates = snap.k.map((row) => ({ x: row[0], y: row[1], item: row[2], ttl: row[3] }));
+  view.mines = (snap.mn || []).map((row) => ({ x: row[0], y: row[1], arm: row[2] ? 0 : 1 }));
   view.fx = snap.x.map((row) => {
     const base = { x: row[1], y: row[2], t: row[5] / 100, life: row[6] / 100, color: row[7] };
     if (row[0] === 0) return { ...base, type: "ring", r: 0, max: row[3] };
@@ -849,6 +980,62 @@ export function advanceView(view, dt) {
     bullet.y += bullet.vy * dt;
   }
   updateFx(view, dt);
+}
+
+function drawSkillVisuals(context, world, fighter, cx) {
+  const clock = world.clock;
+  context.lineWidth = 2;
+  context.strokeStyle = fighter.color;
+  if (fighter.skill === "mirror") {
+    context.beginPath();
+    const start = fighter.facing > 0 ? -1.05 : Math.PI - 1.05;
+    context.arc(cx + fighter.facing * 2, fighter.y + 19, 17, start, start + 2.1);
+    context.stroke();
+  } else if (fighter.skill === "magnet") {
+    context.lineWidth = 1;
+    for (let ring = 0; ring < 3; ring += 1) {
+      const radius = 280 - ((clock * 110 + ring * 93) % 280);
+      context.globalAlpha = Math.min(0.4, radius / 280 * 0.4);
+      context.beginPath();
+      context.arc(cx, fighter.y + 18, radius, 0, Math.PI * 2);
+      context.stroke();
+    }
+    context.globalAlpha = 1;
+  } else if (fighter.skill === "rage") {
+    const rage = clamp(fighter.damage / 120, 0, 1);
+    if (rage > 0.12) {
+      context.strokeStyle = rage > 0.6 ? "#ef4444" : fighter.color;
+      context.beginPath();
+      for (let flame = -1; flame <= 1; flame += 1) {
+        const wobble = Math.sin(clock * 28 + flame * 2) * 2;
+        const top = fighter.y - 2 - rage * 11;
+        context.moveTo(cx + flame * 5, fighter.y);
+        context.lineTo(cx + flame * 5 + wobble, top);
+      }
+      context.moveTo(cx - 5, fighter.y + 4);
+      context.lineTo(cx - 1, fighter.y + 6);
+      context.moveTo(cx + 5, fighter.y + 4);
+      context.lineTo(cx + 1, fighter.y + 6);
+      context.stroke();
+    }
+  } else if (fighter.skill === "sentry" && fighter.charge > 0) {
+    const weapon = WEAPONS[fighter.weapon];
+    const startX = cx + fighter.facing * (8 + weapon.length + 4);
+    context.globalAlpha = 0.35 + Math.min(0.65, fighter.charge * 0.7);
+    context.strokeStyle = "#ef4444";
+    context.lineWidth = 1 + fighter.charge * 1.5;
+    context.setLineDash([6, 4]);
+    context.beginPath();
+    context.moveTo(startX, fighter.y + 19);
+    context.lineTo(startX + fighter.facing * 760, fighter.y + 19);
+    context.stroke();
+    context.setLineDash([]);
+    context.globalAlpha = 1;
+    context.fillStyle = "#ef4444";
+    context.font = "bold 12px ui-monospace, monospace";
+    context.textAlign = "center";
+    context.fillText("!", cx, fighter.y - 22);
+  }
 }
 
 function drawFighter(context, world, fighter) {
@@ -918,6 +1105,7 @@ function drawFighter(context, world, fighter) {
       context.stroke();
     }
   }
+  drawSkillVisuals(context, world, fighter, cx);
   const activeBuffs = BUFF_IDS.filter((id) => fighter.buffs[id] > 0);
   if (activeBuffs.length) {
     context.font = "9px ui-monospace, monospace";
@@ -1012,6 +1200,13 @@ function drawHud(context, world) {
       context.arc(left + 12 + stock * 12, 76, 4, 0, Math.PI * 2);
       context.stroke();
     }
+    if (fighter.skill === "reboot" && !fighter.rebooted && fighter.stocks > 0) {
+      context.setLineDash([2, 2]);
+      context.beginPath();
+      context.arc(left + 12 + Math.min(fighter.stocks, 7) * 12, 76, 4, 0, Math.PI * 2);
+      context.stroke();
+      context.setLineDash([]);
+    }
   });
 }
 
@@ -1086,6 +1281,26 @@ export function drawBrawl(context, world, overlay) {
       context.fillStyle = "#a3e635";
       context.strokeRect(crate.x - 9, crate.y - 9, 18, 18);
       context.fillText(WEAPONS[crate.item].glyph, crate.x, crate.y + 4);
+    }
+  }
+
+  for (const mine of world.mines) {
+    const armed = mine.arm <= 0;
+    context.strokeStyle = armed ? "#facc15" : "#64748b";
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.arc(mine.x, mine.y - 5, 5, 0, Math.PI * 2);
+    for (let spike = 0; spike < 4; spike += 1) {
+      const angle = spike * (Math.PI / 2) + Math.PI / 4;
+      context.moveTo(mine.x + Math.cos(angle) * 5, mine.y - 5 + Math.sin(angle) * 5);
+      context.lineTo(mine.x + Math.cos(angle) * 8, mine.y - 5 + Math.sin(angle) * 8);
+    }
+    context.stroke();
+    if (armed && Math.floor(world.clock * 4) % 2 === 0) {
+      context.fillStyle = "#ef4444";
+      context.beginPath();
+      context.arc(mine.x, mine.y - 5, 1.8, 0, Math.PI * 2);
+      context.fill();
     }
   }
 

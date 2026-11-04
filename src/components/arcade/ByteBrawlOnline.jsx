@@ -4,7 +4,7 @@ import { MAX_PLAYERS, joinRoom, normalizeCode, openRoom } from "./byteBrawlNet";
 import { StagePreview, DropsGuide } from "./ByteBrawlSetup";
 
 const DEFAULT_SETTINGS = { teamMode: "coop", stage: 0, opponents: 2, round: 1 };
-const ROUND_CHOICES = [1, 4, 7, 10, 13, 16];
+const ROUND_CHOICES = ENEMY_TYPES.map((_, index) => index * 3 + 1);
 const CONTROL_KEYS = ["a", "d", "w", "s", "j", "k", "z", "enter", " ", "arrowleft", "arrowright", "arrowup", "arrowdown"];
 const PLAYER_SWATCHES = ["#a3e635", "#f1f5f9", "#818cf8"];
 

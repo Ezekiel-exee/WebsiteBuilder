@@ -154,7 +154,7 @@ function ByteBrawlMatch({ setup, difficulty, level, onMenu, onLevelAdvance }) {
           {status === "won" && finalMission && (
             <div role="status" className="w-full rounded-xl border border-orange-300/30 bg-orange-300/5 p-4 text-center">
               <p className="font-mono text-xs font-semibold tracking-[0.2em] text-orange-300">CAMPAIGN COMPLETE</p>
-              <p className="mt-1 text-sm text-zinc-300">Kernel Panic is down. Every mission is cleared.</p>
+              <p className="mt-1 text-sm text-zinc-300">Root Access is down. Every mission is cleared.</p>
               <button type="button" onClick={onMenu} className="mt-3 rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 font-mono text-xs font-semibold text-cyan-100 transition hover:bg-cyan-300/20">
                 $ back to menu
               </button>
