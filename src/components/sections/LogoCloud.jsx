@@ -13,18 +13,18 @@ export default function LogoCloud() {
   return (
     <section className="bg-zinc-950 px-6 py-20">
       <div className="mx-auto max-w-6xl">
-        <p className="text-center text-sm font-medium uppercase tracking-[0.2em] text-zinc-500">
+        <p className="text-center text-sm font-medium uppercase tracking-[0.2em] text-zinc-500 leading-relaxed">
           Trusted by fast-growing companies
         </p>
         <div className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-4">
           {LOGO_CLOUD_BRANDS.map((brand) => (
             <div
               key={brand.name}
-              className="group flex h-28 items-center justify-center gap-2.5 bg-zinc-950 text-zinc-500 transition-colors duration-300 hover:bg-zinc-900 hover:text-white"
+              className="group flex h-28 items-center justify-center gap-2 bg-zinc-950 text-zinc-500 transition-colors duration-300 hover:bg-zinc-900 hover:text-white ease-out"
             >
               <svg
                 viewBox="0 0 24 24"
-                className="h-7 w-7 fill-current transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"
+                className="h-7 w-7 fill-current transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110 ease-out"
               >
                 <path fillRule="evenodd" d={brand.shape} />
               </svg>

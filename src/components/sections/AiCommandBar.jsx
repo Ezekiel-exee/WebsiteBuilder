@@ -80,11 +80,11 @@ export default function AiCommandBar() {
   };
 
   return (
-    <section ref={sectionRef} className="bg-slate-950 px-5 py-20 text-white">
+    <section ref={sectionRef} className="bg-slate-950 px-6 py-20 text-white">
       <div className="mx-auto max-w-4xl text-center">
-        <p className="text-sm font-semibold uppercase tracking-[.2em] text-violet-300">A better starting point</p>
-        <h2 className="mt-3 text-3xl font-bold sm:text-5xl">Make space for your next idea</h2>
-        <p className="mt-4 text-slate-400">Open a focused workspace for prompts, research, and quick actions.</p>
+        <p className="text-sm font-semibold uppercase tracking-[.2em] text-violet-300 leading-relaxed">A better starting point</p>
+        <h2 className="mt-4 text-3xl font-bold sm:text-5xl leading-tight tracking-tight">Make space for your next idea</h2>
+        <p className="mt-4 text-slate-400 leading-relaxed">Open a focused workspace for prompts, research, and quick actions.</p>
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -93,7 +93,7 @@ export default function AiCommandBar() {
         >
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/15 text-violet-200" aria-hidden="true">✦</span>
           <span className="flex-1 text-sm text-slate-300">Ask, search, or create anything…</span>
-          <kbd className="rounded-md border border-white/10 bg-slate-950 px-2 py-1 text-xs text-slate-400">⌘ K</kbd>
+          <kbd className="rounded-md border border-white/10 bg-slate-950 px-2 py-2 text-xs text-slate-400">⌘ K</kbd>
         </button>
       </div>
 
@@ -109,9 +109,9 @@ export default function AiCommandBar() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="ai-command-title"
-            className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/50"
+            className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-xl shadow-black/50"
           >
-            <h3 id="ai-command-title" className="sr-only">AI command palette</h3>
+            <h3 id="ai-command-title" className="sr-only leading-tight tracking-tight">AI command palette</h3>
             <form
               onSubmit={(event) => {
                 event.preventDefault();
@@ -132,12 +132,12 @@ export default function AiCommandBar() {
                 aria-label="Prompt or search"
                 className="min-w-0 flex-1 bg-transparent py-5 text-sm text-white outline-none placeholder:text-slate-500"
               />
-              <button type="submit" className="rounded-lg bg-violet-400 px-3 py-2 text-xs font-bold text-slate-950 transition hover:bg-violet-300">
+              <button type="submit" className="rounded-lg bg-violet-400 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-violet-300 transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">
                 Run
               </button>
             </form>
 
-            <div className="flex gap-2 overflow-x-auto border-b border-white/5 px-4 py-3" aria-label="Prompt categories">
+            <div className="flex gap-2 overflow-x-auto border-b border-white/5 px-4 py-4" aria-label="Prompt categories">
               {categories.map((category) => (
                 <button
                   key={category}
@@ -157,7 +157,7 @@ export default function AiCommandBar() {
             </div>
 
             <div className="max-h-64 overflow-y-auto p-2">
-              <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Suggested prompts</p>
+              <p className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 leading-relaxed">Suggested prompts</p>
               {suggestions.map((item, index) => (
                 <button
                   key={item.prompt}
@@ -168,19 +168,19 @@ export default function AiCommandBar() {
                   }`}
                 >
                   <span>{item.prompt}</span>
-                  <span className="ml-3 text-xs text-slate-500">{item.category}</span>
+                  <span className="ml-4 text-xs text-slate-500">{item.category}</span>
                 </button>
               ))}
-              {!suggestions.length && <p className="px-3 py-5 text-sm text-slate-500">No matching prompts. Press Enter to ask your own.</p>}
+              {!suggestions.length && <p className="px-4 py-6 text-sm text-slate-500 leading-relaxed">No matching prompts. Press Enter to ask your own.</p>}
             </div>
 
             {(answer || streaming) && (
               <div className="border-t border-white/10 bg-violet-400/[.06] p-4" aria-live="polite">
-                <p className="text-xs font-semibold uppercase tracking-wider text-violet-200">Draft response</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-violet-200 leading-relaxed">Draft response</p>
                 <p className="mt-2 text-sm leading-relaxed text-slate-300">{answer}{streaming && <span className="animate-pulse">▍</span>}</p>
               </div>
             )}
-            <div className="flex justify-between border-t border-white/5 px-4 py-3 text-[11px] text-slate-500">
+            <div className="flex justify-between border-t border-white/5 px-4 py-4 text-xs text-slate-500">
               <span>↑↓ navigate · Enter run · Esc close</span>
               <button type="button" onClick={() => setOpen(false)} className="hover:text-white">Close</button>
             </div>

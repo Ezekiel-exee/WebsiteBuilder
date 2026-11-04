@@ -50,25 +50,25 @@ export default function CampusAlertTicker() {
   return (
     <section ref={alertRef} aria-live="polite" className="bg-indigo-950 text-white">
       {dismissedIds === null ? (
-        <p className="mx-auto max-w-7xl px-5 py-4 text-sm text-indigo-200">Loading campus announcements…</p>
+        <p className="mx-auto max-w-7xl px-6 py-4 text-sm text-indigo-200 leading-relaxed">Loading campus announcements…</p>
       ) : alert ? (
         <>
-          <div className={`mx-auto flex max-w-7xl flex-wrap items-center gap-3 border-b px-5 py-3 ${alert.tone}`}>
-            <span className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${alert.badge}`}>{alert.severity} · {alert.level}</span>
-            <p className="min-w-0 flex-1 text-sm font-medium">{alert.text}</p>
+          <div className={`mx-auto flex max-w-7xl flex-wrap items-center gap-4 border-b px-6 py-4 ${alert.tone}`}>
+            <span className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider ${alert.badge}`}>{alert.severity} · {alert.level}</span>
+            <p className="min-w-0 flex-1 text-sm font-medium leading-relaxed">{alert.text}</p>
             <button type="button" onClick={() => setExpanded((current) => !current)} aria-expanded={expanded} className="text-sm font-semibold underline underline-offset-4 hover:text-white">{expanded ? "Close details" : "Details"}</button>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <button type="button" aria-label="Previous announcement" onClick={() => moveAlert(-1)} disabled={visibleAlerts.length < 2} className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10 disabled:opacity-40">‹</button>
               <button type="button" aria-label="Next announcement" onClick={() => moveAlert(1)} disabled={visibleAlerts.length < 2} className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10 disabled:opacity-40">›</button>
             </div>
-            <button type="button" aria-label={`Dismiss ${alert.level} announcement`} onClick={dismissAlert} className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold hover:bg-white/10">Dismiss</button>
+            <button type="button" aria-label={`Dismiss ${alert.level} announcement`} onClick={dismissAlert} className="rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:bg-white/10 transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">Dismiss</button>
           </div>
-          {expanded && <div className="border-b border-white/10 bg-indigo-900/60"><p className="mx-auto max-w-7xl px-5 py-4 text-sm leading-relaxed text-indigo-100">{alert.detail}</p></div>}
+          {expanded && <div className="border-b border-white/10 bg-indigo-900/60"><p className="mx-auto max-w-7xl px-6 py-4 text-sm leading-relaxed text-indigo-100">{alert.detail}</p></div>}
         </>
       ) : (
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4">
-          <p className="text-sm text-indigo-200">No active campus announcements.</p>
-          {dismissedIds.length > 0 && <button type="button" onClick={restoreAlerts} className="text-sm font-semibold underline underline-offset-4 hover:text-white">Restore dismissed alerts</button>}
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+          <p className="text-sm text-indigo-200 leading-relaxed">No active campus announcements.</p>
+          {dismissedIds.length > 0 && <button type="button" onClick={restoreAlerts} className="text-sm font-semibold underline underline-offset-4 hover:text-white transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">Restore dismissed alerts</button>}
         </div>
       )}
     </section>

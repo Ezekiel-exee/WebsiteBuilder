@@ -22,20 +22,20 @@ export default function CtaBanner() {
         <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.15)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
 
         <div className="relative">
-          <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-5xl">
+          <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-5xl leading-tight">
             Ready to launch your next big idea?
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-indigo-100">
+          <p className="mx-auto mt-6 max-w-xl text-lg text-indigo-100 leading-relaxed">
             Join 25,000+ makers getting weekly design drops, templates, and growth tips.
           </p>
 
           {status === "success" ? (
-            <div className="mx-auto mt-10 inline-flex items-center gap-3 rounded-full bg-white/15 px-6 py-3.5 font-semibold text-white backdrop-blur">
+            <div className="mx-auto mt-10 inline-flex items-center gap-4 rounded-full bg-white/15 px-6 py-4 font-semibold text-white backdrop-blur">
               <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-400 text-sm text-emerald-950">✓</span>
               You&apos;re on the list! Check your inbox.
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="mx-auto mt-10 flex max-w-md flex-col gap-3 sm:flex-row" noValidate>
+            <form onSubmit={handleSubmit} className="mx-auto mt-10 flex max-w-md flex-col gap-4 sm:flex-row" noValidate>
               <input
                 type="email"
                 value={email}
@@ -52,7 +52,7 @@ export default function CtaBanner() {
               <button
                 type="submit"
                 disabled={status === "loading"}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-semibold text-indigo-700 shadow-lg transition hover:scale-[1.03] disabled:opacity-70"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-indigo-700 shadow-lg hover:scale-[1.03] disabled:opacity-70 transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
               >
                 {status === "loading" && (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-700" />
@@ -61,7 +61,7 @@ export default function CtaBanner() {
               </button>
             </form>
           )}
-          {status === "error" && <p className="mt-3 text-sm text-rose-100">Please enter a valid email address.</p>}
+          {status === "error" && <p className="mt-4 text-sm text-rose-100 leading-relaxed">Please enter a valid email address.</p>}
         </div>
       </div>
     </section>

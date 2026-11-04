@@ -35,7 +35,7 @@ function containsStylesheet(node) {
  * Tailwind's responsive breakpoints (sm:, md:, lg:) react to the simulated device width
  * exactly as they would on a real phone or tablet.
  */
-export default function PreviewFrame({ children, width = "100%", height, autoHeight = true, title = "Preview" }) {
+export default function PreviewFrame({ children, width = "100%", height, autoHeight = true, title = "Preview", backgroundColor = "#0c0c11", onContentNode }) {
   const iframeRef = useRef(null);
   const [mountNode, setMountNode] = useState(null);
   const [contentHeight, setContentHeight] = useState(320);
@@ -45,6 +45,7 @@ export default function PreviewFrame({ children, width = "100%", height, autoHei
   const handleLoad = () => {
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return;
+    doc.body.style.backgroundColor = backgroundColor;
     setMountNode(null);
     const stylesReady = syncFrameStyles(doc);
     setStyleError(!stylesReady);
@@ -93,6 +94,17 @@ export default function PreviewFrame({ children, width = "100%", height, autoHei
     return () => observer.disconnect();
   }, [mountNode, autoHeight]);
 
+  useEffect(() => {
+    if (!mountNode || !onContentNode) return undefined;
+    return onContentNode(mountNode);
+  }, [mountNode, onContentNode]);
+
+  useEffect(() => {
+    if (iframeRef.current?.contentDocument?.body) {
+      iframeRef.current.contentDocument.body.style.backgroundColor = backgroundColor;
+    }
+  }, [backgroundColor, mountNode]);
+
   return (
     <div className="relative mx-auto" style={{ width, maxWidth: "100%" }}>
       <iframe
@@ -102,7 +114,7 @@ export default function PreviewFrame({ children, width = "100%", height, autoHei
         srcDoc={FRAME_DOC}
         onLoad={handleLoad}
         className="mx-auto block border-0 bg-zinc-950 transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{ width, maxWidth: "100%", height: autoHeight ? contentHeight : height }}
+        style={{ width, maxWidth: "100%", height: autoHeight ? contentHeight : height, backgroundColor }}
       >
         {mountNode && createPortal(children, mountNode)}
       </iframe>

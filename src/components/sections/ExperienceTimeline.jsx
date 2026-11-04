@@ -119,7 +119,7 @@ export default function ExperienceTimeline() {
   }, []);
 
   return (
-    <section className="overflow-hidden bg-slate-950 px-5 py-20 text-white">
+    <section className="overflow-hidden bg-slate-950 px-6 py-20 text-white">
       <style>{`
         @keyframes experience-timeline-glow {
           0%, 100% { box-shadow: 0 0 12px 3px rgba(103, 232, 249, .7), 0 0 30px 8px rgba(34, 211, 238, .28); }
@@ -131,24 +131,24 @@ export default function ExperienceTimeline() {
       `}</style>
 
       <div className="mx-auto max-w-4xl">
-        <p className="text-sm font-semibold uppercase tracking-[.2em] text-cyan-300">The journey so far</p>
-        <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Experience that compounds</h2>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-400">
+        <p className="text-sm font-semibold uppercase tracking-[.2em] text-cyan-300 leading-relaxed">The journey so far</p>
+        <h2 className="mt-2 text-3xl font-bold sm:text-4xl leading-tight tracking-tight">Experience that compounds</h2>
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-400">
           The glow holds at each milestone's center and glides smoothly to the next as you scroll.
         </p>
 
         <div ref={timelineRef} className="relative mt-10 space-y-6">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-6 w-[2px] rounded-full bg-white/10 sm:left-8"
+            className="experience-timeline-track pointer-events-none absolute left-6 w-[2px] rounded-full bg-white/15 sm:left-8"
             style={{ top: `${track.start}px`, height: `${Math.max(0, track.end - track.start)}px` }}
           >
             <div
-              className="experience-timeline-motion absolute inset-x-0 top-0 rounded-full bg-gradient-to-b from-violet-400 via-cyan-300 to-emerald-300 shadow-[0_0_16px_2px_rgba(34,211,238,.5)] transition-[height] duration-700 ease-in-out"
+              className="experience-timeline-progress experience-timeline-motion absolute inset-x-0 top-0 rounded-full bg-gradient-to-b from-violet-400 via-cyan-300 to-emerald-300 shadow-[0_0_16px_2px_rgba(34,211,238,.5)] transition-[height] duration-700 ease-in-out"
               style={{ height: `${progress * 100}%` }}
             />
             <span
-              className="experience-timeline-motion absolute -left-[5px] h-3 w-3 rounded-full bg-cyan-100 transition-[top] duration-700 ease-in-out [animation:experience-timeline-glow_2.4s_ease-in-out_infinite]"
+              className="experience-timeline-dot experience-timeline-motion absolute -left-[5px] h-3 w-3 rounded-full bg-white transition-[top] duration-700 ease-in-out [animation:experience-timeline-glow_2.4s_ease-in-out_infinite]"
               style={{ top: `${progress * 100}%`, transform: "translateY(-50%)" }}
             />
           </div>
@@ -170,18 +170,18 @@ export default function ExperienceTimeline() {
                   }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className={`text-xs font-semibold uppercase tracking-wider transition-colors duration-500 ${active ? "text-cyan-200" : "text-cyan-300"}`}>
+                    <p className={`text-xs font-semibold uppercase tracking-wider transition-colors duration-500 ${active ? "text-cyan-200" : "text-cyan-300"} leading-relaxed`}>
                       {item.year}
                     </p>
-                    <span className={`rounded-full border px-3 py-1 text-xs transition-all duration-500 ${active ? "border-cyan-200/50 bg-cyan-300/10 text-cyan-100" : "border-white/10 text-slate-400"}`}>
+                    <span className={`rounded-full border px-4 py-2 text-xs transition-all duration-500 ${active ? "border-cyan-200/50 bg-cyan-300/10 text-cyan-100" : "border-white/10 text-slate-400"}`}>
                       {item.company}
                     </span>
                   </div>
-                  <h3 className="mt-2 text-xl font-bold">{item.role}</h3>
+                  <h3 className="mt-2 text-xl font-bold leading-tight tracking-tight">{item.role}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.description}</p>
                   <ul className="mt-4 space-y-2 text-sm text-slate-300">
                     {item.achievements.map((achievement) => (
-                      <li key={achievement} className="flex gap-2">
+                      <li key={achievement} className="flex gap-2 leading-relaxed">
                         <span className="text-emerald-400">↗</span>
                         {achievement}
                       </li>
@@ -189,7 +189,7 @@ export default function ExperienceTimeline() {
                   </ul>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {item.stack.map((tag) => (
-                      <span key={tag} className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-slate-300">{tag}</span>
+                      <span key={tag} className="rounded-full bg-white/5 px-2 py-2 text-xs text-slate-300">{tag}</span>
                     ))}
                   </div>
                 </div>

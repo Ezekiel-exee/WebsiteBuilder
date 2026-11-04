@@ -22,7 +22,7 @@ export default function SplitHero() {
 
       <div className="relative mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-2">
         <div>
-          <p className="mb-4 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-orange-600">
+          <p className="mb-4 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-orange-600 leading-relaxed">
             <span className="h-px w-8 bg-orange-600" />
             Creative studio
           </p>
@@ -41,7 +41,7 @@ export default function SplitHero() {
             companies around the world.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-10 flex max-w-md flex-col gap-3 sm:flex-row">
+          <form onSubmit={handleSubmit} className="mt-10 flex max-w-md flex-col gap-4 sm:flex-row">
             <input
               type="email"
               required
@@ -52,7 +52,7 @@ export default function SplitHero() {
             />
             <button
               type="submit"
-              className="rounded-full bg-stone-900 px-6 py-3.5 font-semibold text-white transition hover:bg-orange-600"
+              className="rounded-full bg-stone-900 px-6 py-4 font-semibold text-white hover:bg-orange-600 transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
             >
               {sent ? "We'll be in touch ✓" : "Start a project"}
             </button>
@@ -62,7 +62,7 @@ export default function SplitHero() {
             {SPLIT_HERO_STATS.map((stat) => (
               <div key={stat.label}>
                 <dt className="text-3xl font-bold text-stone-900">{stat.value}</dt>
-                <dd className="mt-1 text-sm text-stone-500">{stat.label}</dd>
+                <dd className="mt-2 text-sm text-stone-500">{stat.label}</dd>
               </div>
             ))}
           </dl>
@@ -73,22 +73,22 @@ export default function SplitHero() {
             <img
               src="https://picsum.photos/seed/studio-a/600/800"
               alt="Studio work"
-              className="h-80 w-full rounded-3xl object-cover shadow-xl transition duration-500 hover:-rotate-2 hover:scale-[1.03]"
+              className="h-80 w-full rounded-3xl object-cover shadow-xl transition duration-500 hover:-rotate-2 hover:scale-[1.03] ease-out"
             />
             <div className="flex flex-col gap-4 pt-12">
               <img
                 src="https://picsum.photos/seed/studio-b/600/500"
                 alt="Studio detail"
-                className="h-48 w-full rounded-3xl object-cover shadow-xl transition duration-500 hover:rotate-2 hover:scale-[1.03]"
+                className="h-48 w-full rounded-3xl object-cover shadow-xl transition duration-500 hover:rotate-2 hover:scale-[1.03] ease-out"
               />
               <img
                 src="https://picsum.photos/seed/studio-c/600/500"
                 alt="Studio team"
-                className="h-48 w-full rounded-3xl object-cover shadow-xl transition duration-500 hover:-rotate-2 hover:scale-[1.03]"
+                className="h-48 w-full rounded-3xl object-cover shadow-xl transition duration-500 hover:-rotate-2 hover:scale-[1.03] ease-out"
               />
             </div>
           </div>
-          <div className="absolute -bottom-6 -left-6 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-2xl">
+          <div className="absolute -bottom-6 -left-6 flex items-center gap-4 rounded-2xl bg-white p-4 shadow-xl">
             <div className="flex -space-x-2">
               {["a", "b", "c"].map((s) => (
                 <img
@@ -100,8 +100,8 @@ export default function SplitHero() {
               ))}
             </div>
             <div className="text-sm">
-              <p className="font-semibold text-stone-900">★★★★★ 4.9/5</p>
-              <p className="text-stone-500">from 300+ reviews</p>
+              <p className="font-semibold text-stone-900 leading-relaxed">★★★★★ 4.9/5</p>
+              <p className="text-stone-500 leading-relaxed">from 300+ reviews</p>
             </div>
           </div>
         </div>

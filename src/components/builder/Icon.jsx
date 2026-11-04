@@ -23,6 +23,7 @@ const PATHS = {
   sparkles: "M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5z",
   external: "M14 3h7v7M10 14L21 3M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5",
   rotate: "M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5",
+  gamepad: "M6.5 9h11a4.5 4.5 0 0 1 4.3 5.8l-1 3a2.5 2.5 0 0 1-3.8 1.3l-3.1-2h-3.8l-3.1 2a2.5 2.5 0 0 1-3.8-1.3l-1-3A4.5 4.5 0 0 1 6.5 9zM7 12v4M5 14h4M16 12h.01M19 15h.01",
 };
 
 export default function Icon({ name, className = "h-4 w-4" }) {

@@ -36,6 +36,38 @@ function define({ component: componentName, sectionNames, ...template }) {
 
 export const TEMPLATES = [
   define({
+    component: "ProductPage",
+    sectionNames: ["Navbar", "ProductCustomizer", "CartDrawer"],
+    id: "product-page",
+    name: "Product & Retail",
+    description: "An e-commerce storefront with product variants, a sticky buy bar, detailed reviews, product accordions, and an interactive cart.",
+    accent: "from-indigo-500 to-rose-400",
+  }),
+  define({
+    component: "HealthcareClinical",
+    sectionNames: ["HealthcareExperience"],
+    id: "healthcare-clinical",
+    name: "Healthcare & Clinical",
+    description: "A patient-first clinic page with emergency contact, clinician booking, symptom guidance, and trust signals.",
+    accent: "from-sky-500 to-emerald-400",
+  }),
+  define({
+    component: "MusicStreaming",
+    sectionNames: ["MusicStreamingExperience"],
+    id: "music-streaming",
+    name: "Music & Streaming",
+    description: "An artist page with an interactive waveform player, album disc, track queue, tour dates, and ticket links.",
+    accent: "from-fuchsia-500 to-indigo-400",
+  }),
+  define({
+    component: "SmartHomeAppliances",
+    sectionNames: ["SmartHomeExperience"],
+    id: "smart-home-appliances",
+    name: "Smart Home & Appliances",
+    description: "A connected-home experience with room controls, device switches, energy usage, and appliance comparisons.",
+    accent: "from-lime-400 to-cyan-400",
+  }),
+  define({
     component: "SaasLanding",
     sectionNames: [
       "Navbar",

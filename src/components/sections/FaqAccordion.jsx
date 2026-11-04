@@ -30,11 +30,11 @@ export default function FaqAccordion() {
     <section className="bg-white px-6 py-24">
       <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1.6fr]">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600">FAQ</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Frequently asked questions</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600 leading-relaxed">FAQ</p>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl leading-tight">Frequently asked questions</h2>
           <p className="mt-4 leading-relaxed text-slate-500">
             Can&apos;t find the answer you&apos;re looking for? Reach out to our{" "}
-            <a href="#" className="font-semibold text-indigo-600 underline-offset-4 hover:underline">
+            <a href="#" className="font-semibold text-indigo-600 underline-offset-4 hover:underline transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">
               support team
             </a>
             .
@@ -53,29 +53,21 @@ export default function FaqAccordion() {
                   className="group flex w-full items-center justify-between gap-6 py-6 text-left"
                 >
                   <span
-                    className={`text-lg font-medium transition-colors ${
-                      open ? "text-indigo-600" : "text-slate-900 group-hover:text-indigo-600"
-                    }`}
+                    className={`text-lg font-medium transition-colors ${ open ? "text-indigo-600" : "text-slate-900 group-hover:text-indigo-600" } duration-200 ease-out`}
                   >
                     {item.q}
                   </span>
                   <span
-                    className={`relative grid h-8 w-8 shrink-0 place-items-center rounded-full border transition-all duration-300 ${
-                      open ? "rotate-180 border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 text-slate-500"
-                    }`}
+                    className={`relative grid h-8 w-8 shrink-0 place-items-center rounded-full border transition-all duration-300 ${ open ? "rotate-180 border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 text-slate-500" }`}
                   >
                     <span className="absolute h-0.5 w-3 rounded bg-current" />
                     <span
-                      className={`absolute h-3 w-0.5 rounded bg-current transition-transform duration-300 ${
-                        open ? "scale-y-0" : "scale-y-100"
-                      }`}
+                      className={`absolute h-3 w-0.5 rounded bg-current transition-transform duration-300 ${ open ? "scale-y-0" : "scale-y-100" }`}
                     />
                   </span>
                 </button>
                 <div
-                  className={`grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                    open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                  }`}
+                  className={`grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${ open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0" }`}
                 >
                   <div className="overflow-hidden">
                     <p className="pb-6 pr-12 leading-relaxed text-slate-600">{item.a}</p>

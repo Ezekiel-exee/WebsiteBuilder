@@ -9,22 +9,22 @@ const MARQUEE_TESTIMONIALS = [
 
 function MarqueeTestimonialCard({ item }) {
   return (
-    <figure className="w-80 shrink-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-96">
-      <div className="mb-3 flex gap-0.5 text-amber-400">
+    <figure className="w-80 shrink-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-96 ease-out">
+      <div className="mb-4 flex gap-2 text-amber-400">
         {"★★★★★".split("").map((s, i) => (
           <span key={i}>{s}</span>
         ))}
       </div>
-      <blockquote className="text-[15px] leading-relaxed text-slate-700">“{item.quote}”</blockquote>
-      <figcaption className="mt-5 flex items-center gap-3">
+      <blockquote className="text-sm leading-relaxed text-slate-700">“{item.quote}”</blockquote>
+      <figcaption className="mt-6 flex items-center gap-4">
         <img
           src={`https://i.pravatar.cc/96?u=${item.seed}`}
           alt={item.name}
           className="h-10 w-10 rounded-full object-cover ring-2 ring-slate-100"
         />
         <div>
-          <p className="text-sm font-semibold text-slate-900">{item.name}</p>
-          <p className="text-xs text-slate-500">{item.role}</p>
+          <p className="text-sm font-semibold text-slate-900 leading-relaxed">{item.name}</p>
+          <p className="text-xs text-slate-500 leading-relaxed">{item.role}</p>
         </div>
       </figcaption>
     </figure>
@@ -36,9 +36,7 @@ function MarqueeRow({ items, reverse }) {
     <div className="group flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
       {/* Content is rendered twice so translating by -50% loops seamlessly */}
       <div
-        className={`flex w-max gap-6 py-3 pr-6 group-hover:[animation-play-state:paused] ${
-          reverse ? "[animation:marquee-testimonials_45s_linear_infinite_reverse]" : "[animation:marquee-testimonials_40s_linear_infinite]"
-        }`}
+        className={`flex w-max gap-6 py-4 pr-6 group-hover:[animation-play-state:paused] ${ reverse ? "[animation:marquee-testimonials_45s_linear_infinite_reverse]" : "[animation:marquee-testimonials_40s_linear_infinite]" } transition-all duration-200 ease-out`}
       >
         {[...items, ...items].map((item, i) => (
           <MarqueeTestimonialCard key={`${item.seed}-${i}`} item={item} />
@@ -61,9 +59,9 @@ export default function MarqueeTestimonials() {
       `}</style>
 
       <div className="mx-auto max-w-2xl px-6 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600">Testimonials</p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">Loved by builders worldwide</h2>
-        <p className="mt-4 text-slate-500">Join thousands of teams shipping faster. Hover to pause.</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600 leading-relaxed">Testimonials</p>
+        <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl leading-tight">Loved by builders worldwide</h2>
+        <p className="mt-4 text-slate-500 leading-relaxed">Join thousands of teams shipping faster. Hover to pause.</p>
       </div>
 
       <div className="mt-14 space-y-4">

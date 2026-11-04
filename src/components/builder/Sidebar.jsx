@@ -86,8 +86,8 @@ export default function Sidebar({ route, onNavigate, open, onClose }) {
             <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-600">Components</p>
             {filtered.map((cat) => {
               const featured = cat.components.some((id) => COMPONENTS[id].featured);
-              return (
-                <button key={cat.id} type="button" onClick={() => go({ type: "category", id: cat.id })} className={item(route.type === "category" && route.id === cat.id)}>
+              const categoryButton = (
+                <button type="button" onClick={() => go({ type: "category", id: cat.id })} className={item(route.type === "category" && route.id === cat.id)}>
                   <span className="grid h-6 w-6 place-items-center rounded-md border border-white/10 bg-zinc-900 text-zinc-400 group-hover:text-white">
                     <Icon name={cat.icon} className="h-3.5 w-3.5" />
                   </span>
@@ -96,6 +96,7 @@ export default function Sidebar({ route, onNavigate, open, onClose }) {
                   <span className="text-[11px] text-zinc-600">{cat.components.length}</span>
                 </button>
               );
+              return <div key={cat.id}>{categoryButton}</div>;
             })}
             {filtered.length === 0 && filteredTemplates.length === 0 && (
               <p className="px-3 py-4 text-sm text-zinc-500">No matches for “{query}”.</p>
@@ -103,10 +104,21 @@ export default function Sidebar({ route, onNavigate, open, onClose }) {
           </div>
         </nav>
 
-        <div className="border-t border-white/10 p-4 text-xs text-zinc-500">
-          {Object.keys(COMPONENTS).length} components · {TEMPLATES.length} templates
-          <br />
-          React · Vite · Tailwind CSS
+        <div className="flex items-center justify-between gap-3 border-t border-white/10 p-4">
+          <p className="text-xs leading-5 text-zinc-500">
+            {Object.keys(COMPONENTS).length} components · {TEMPLATES.length} templates
+            <br />
+            React · Vite · Tailwind CSS
+          </p>
+          <button
+            type="button"
+            onClick={() => go({ type: "arcade", id: "arcade" })}
+            aria-label="Open the hidden Code Arcade"
+            title="Open Code Arcade"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-white/10 bg-zinc-900 text-zinc-400 transition hover:border-cyan-400/25 hover:bg-cyan-400/5 hover:text-cyan-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400"
+          >
+            <Icon name="gamepad" className="h-5 w-5" />
+          </button>
         </div>
       </aside>
     </>

@@ -49,23 +49,23 @@ export default function GradientHero() {
       <div className="mx-auto max-w-4xl text-center">
         <a
           href="#"
-          className="group mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-4 text-sm text-zinc-300 backdrop-blur transition hover:border-white/20"
+          className="group mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-2 pl-2 pr-4 text-sm text-zinc-300 backdrop-blur hover:border-white/20 transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
         >
-          <span className="rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 px-2.5 py-0.5 text-xs font-semibold text-white">
+          <span className="rounded-full bg-gradient-to-r from-violet-500 to-cyan-500 px-2 py-2 text-xs font-semibold text-white">
             New
           </span>
           Version 3.0 is live
-          <span className="transition-transform group-hover:translate-x-1">→</span>
+          <span className="transition-transform group-hover:translate-x-1 duration-200 ease-out">→</span>
         </a>
 
-        <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+        <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl leading-tight">
           Build stunning websites
           <br />
           for{" "}
           <span className="bg-[linear-gradient(90deg,#a78bfa,#22d3ee,#f472b6,#a78bfa)] bg-[length:200%_auto] bg-clip-text text-transparent [animation:gradient-hero-shine_4s_linear_infinite]">
             {text}
           </span>
-          <span className="ml-1 inline-block w-[3px] animate-pulse bg-cyan-400 align-middle">&nbsp;</span>
+          <span className="ml-2 inline-block w-[3px] animate-pulse bg-cyan-400 align-middle">&nbsp;</span>
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
@@ -76,14 +76,14 @@ export default function GradientHero() {
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a
             href="#"
-            className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-cyan-500 px-7 py-3.5 font-semibold shadow-[0_0_40px_-8px_rgba(139,92,246,0.8)] transition hover:shadow-[0_0_60px_-6px_rgba(34,211,238,0.8)]"
+            className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-cyan-500 px-8 py-4 font-semibold shadow-[0_0_40px_-8px_rgba(139,92,246,0.8)] hover:shadow-[0_0_60px_-6px_rgba(34,211,238,0.8)] transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
           >
             Start building free
-            <span className="transition-transform group-hover:translate-x-1">→</span>
+            <span className="transition-transform group-hover:translate-x-1 duration-200 ease-out">→</span>
           </a>
           <a
             href="#"
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-7 py-3.5 font-semibold text-zinc-200 backdrop-blur transition hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-8 py-4 font-semibold text-zinc-200 backdrop-blur hover:bg-white/10 transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
               <path d="M8 5v14l11-7z" />
@@ -92,7 +92,7 @@ export default function GradientHero() {
           </a>
         </div>
 
-        <div className="mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-zinc-500">
+        <div className="mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-zinc-500">
           {["No credit card required", "14-day free trial", "Cancel anytime"].map((item) => (
             <span key={item} className="flex items-center gap-2">
               <svg viewBox="0 0 20 20" className="h-4 w-4 fill-emerald-400">

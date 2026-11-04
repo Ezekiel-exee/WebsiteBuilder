@@ -31,10 +31,10 @@ export default function MasonryGallery() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-5xl">Selected work</h2>
-            <p className="mt-3 text-neutral-500">A curated collection of recent shoots. Click any photo to expand.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-5xl leading-tight">Selected work</h2>
+            <p className="mt-4 text-neutral-500 leading-relaxed">A curated collection of recent shoots. Click any photo to expand.</p>
           </div>
-          <div className="flex flex-wrap gap-2 rounded-full bg-white p-1.5 shadow-sm ring-1 ring-neutral-200">
+          <div className="flex flex-wrap gap-2 rounded-full bg-white p-2 shadow-sm ring-1 ring-neutral-200">
             {MASONRY_GALLERY_FILTERS.map((f) => (
               <button
                 key={f}
@@ -62,11 +62,11 @@ export default function MasonryGallery() {
                 src={item.src}
                 alt={item.title}
                 loading="lazy"
-                className="w-full transition duration-700 group-hover:scale-110"
+                className="w-full transition duration-700 group-hover:scale-110 ease-out"
               />
-              <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-transparent p-5 opacity-0 transition duration-500 group-hover:opacity-100">
+              <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-transparent p-6 opacity-0 transition duration-500 group-hover:opacity-100 ease-out">
                 <span className="text-xs font-medium uppercase tracking-wider text-white/70">{item.category}</span>
-                <span className="translate-y-2 text-lg font-semibold text-white transition duration-500 group-hover:translate-y-0">
+                <span className="translate-y-2 text-lg font-semibold text-white transition duration-500 group-hover:translate-y-0 ease-out">
                   {item.title}
                 </span>
               </div>
@@ -104,7 +104,7 @@ export default function MasonryGallery() {
             <img
               src={items[lightboxIndex].src}
               alt={items[lightboxIndex].title}
-              className="max-h-[75vh] w-auto rounded-xl object-contain shadow-2xl"
+              className="max-h-[75vh] w-auto rounded-xl object-contain shadow-xl"
             />
             <figcaption className="mt-4 text-center text-white">
               {items[lightboxIndex].title}

@@ -64,7 +64,7 @@ function BentoIcon({ name }) {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-6 w-6 transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-125"
+      className="h-6 w-6 transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-125 ease-out"
     >
       {paths[name]}
     </svg>
@@ -92,9 +92,9 @@ function BentoTiltCard({ item, featured }) {
       className={`group relative overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/80 p-7 transition-transform duration-200 ease-out ${item.className}`}
       style={{ transform: `perspective(900px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}
     >
-      <div className={`absolute inset-0 bg-gradient-to-br opacity-40 transition-opacity duration-500 group-hover:opacity-100 ${item.accent}`} />
+      <div className={`absolute inset-0 bg-gradient-to-br opacity-40 transition-opacity duration-500 group-hover:opacity-100 ${item.accent} ease-out`} />
       <div
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 ease-out"
         style={{
           background: `radial-gradient(400px circle at ${tilt.glowX}% ${tilt.glowY}%, rgba(255,255,255,0.12), transparent 40%)`,
         }}
@@ -103,7 +103,7 @@ function BentoTiltCard({ item, featured }) {
         <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/10 text-white">
           <BentoIcon name={item.icon} />
         </div>
-        <h3 className={`font-semibold text-white ${featured ? "text-2xl sm:text-3xl" : "text-lg"}`}>{item.title}</h3>
+        <h3 className={`font-semibold text-white ${featured ? "text-2xl sm:text-3xl" : "text-lg"} leading-tight tracking-tight`}>{item.title}</h3>
         <p className="mt-2 text-sm leading-relaxed text-zinc-400">{item.body}</p>
 
         {featured && (
@@ -117,7 +117,7 @@ function BentoTiltCard({ item, featured }) {
                 />
               ))}
             </div>
-            <p className="mt-3 text-xs text-zinc-500">Average load time: 0.4s</p>
+            <p className="mt-4 text-xs text-zinc-500 leading-relaxed">Average load time: 0.4s</p>
           </div>
         )}
       </div>
@@ -130,11 +130,11 @@ export default function BentoGrid() {
     <section className="bg-zinc-950 px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-400">Features</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-5xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-400 leading-relaxed">Features</p>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-5xl leading-tight">
             Everything you need to ship
           </h2>
-          <p className="mt-4 text-zinc-400">A complete toolkit designed for modern teams. Hover the cards to explore.</p>
+          <p className="mt-4 text-zinc-400 leading-relaxed">A complete toolkit designed for modern teams. Hover the cards to explore.</p>
         </div>
 
         <div className="mt-16 grid auto-rows-[minmax(200px,auto)] gap-4 md:grid-cols-3">

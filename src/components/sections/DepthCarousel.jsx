@@ -67,9 +67,9 @@ export default function DepthCarousel() {
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-600/25 blur-[140px]" />
 
       <div className="relative mx-auto max-w-3xl px-6 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-300">Featured destinations</p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">Wander somewhere new</h2>
-        <p className="mt-4 text-zinc-400">Swipe, drag, click a side card, or use your arrow keys to explore.</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-300 leading-relaxed">Featured destinations</p>
+        <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl leading-tight">Wander somewhere new</h2>
+        <p className="mt-4 text-zinc-400 leading-relaxed">Swipe, drag, click a side card, or use your arrow keys to explore.</p>
       </div>
 
       <div
@@ -113,30 +113,22 @@ export default function DepthCarousel() {
               }}
             >
               <div
-                className={`relative h-full w-full overflow-hidden rounded-3xl ring-1 transition-shadow duration-700 ${
-                  isActive
-                    ? "shadow-[0_30px_80px_-20px_rgba(99,102,241,0.7)] ring-white/30"
-                    : "shadow-2xl ring-white/10"
-                }`}
+                className={`relative h-full w-full overflow-hidden rounded-3xl ring-1 transition-shadow duration-700 ${ isActive ? "shadow-[0_30px_80px_-20px_rgba(99,102,241,0.7)] ring-white/30" : "shadow-xl ring-white/10" }`}
               >
                 <img
                   src={slide.src}
                   alt={slide.title}
                   draggable={false}
-                  className={`h-full w-full object-cover transition-transform duration-[1200ms] ${
-                    isActive ? "scale-100" : "scale-110"
-                  }`}
+                  className={`h-full w-full object-cover transition-transform duration-[1200ms] ${ isActive ? "scale-100" : "scale-110" }`}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
                 <div
-                  className={`absolute inset-x-0 bottom-0 p-5 transition-all duration-700 sm:p-7 ${
-                    isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-                  }`}
+                  className={`absolute inset-x-0 bottom-0 p-6 transition-all duration-700 sm:p-8 ${ isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0" }`}
                 >
-                  <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+                  <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-medium backdrop-blur">
                     {slide.tag}
                   </span>
-                  <h3 className="mt-3 text-xl font-semibold sm:text-2xl">{slide.title}</h3>
+                  <h3 className="mt-4 text-xl font-semibold sm:text-2xl leading-tight tracking-tight">{slide.title}</h3>
                 </div>
               </div>
             </div>
@@ -147,7 +139,7 @@ export default function DepthCarousel() {
           type="button"
           onClick={prev}
           aria-label="Previous slide"
-          className="absolute left-3 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/20 text-white/70 opacity-60 backdrop-blur-md transition-all duration-300 hover:bg-black/40 hover:text-white hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 sm:left-6 sm:h-12 sm:w-12"
+          className="absolute left-3 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/20 text-white/70 opacity-60 backdrop-blur-md hover:bg-black/40 hover:text-white hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 sm:left-6 sm:h-12 sm:w-12 transition-all duration-200 ease-out focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
@@ -158,7 +150,7 @@ export default function DepthCarousel() {
           type="button"
           onClick={next}
           aria-label="Next slide"
-          className="absolute right-3 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/20 text-white/70 opacity-60 backdrop-blur-md transition-all duration-300 hover:bg-black/40 hover:text-white hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 sm:right-6 sm:h-12 sm:w-12"
+          className="absolute right-3 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/20 text-white/70 opacity-60 backdrop-blur-md hover:bg-black/40 hover:text-white hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 sm:right-6 sm:h-12 sm:w-12 transition-all duration-200 ease-out focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
@@ -199,7 +191,7 @@ export default function DepthCarousel() {
         </button>
       </div>
 
-      <p className="relative mt-4 text-center text-sm tabular-nums text-zinc-500">
+      <p className="relative mt-4 text-center text-sm tabular-nums text-zinc-500 leading-relaxed">
         {String(active + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
       </p>
     </section>

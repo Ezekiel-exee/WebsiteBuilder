@@ -1,4 +1,4 @@
-import { memo, Suspense, useCallback, useMemo, useRef, useState } from "react";
+import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CodeView from "./CodeView";
 import CopyButton from "./CopyButton";
 import LoadingSkeleton from "./LoadingSkeleton";
@@ -12,6 +12,7 @@ function TemplateView({ template, onOpenSection }) {
   const [view, setView] = useState("preview");
   const [device, setDevice] = useState("desktop");
   const [bundle, setBundle] = useState(null);
+  const [editedBundle, setEditedBundle] = useState(null);
   const [bundleLoading, setBundleLoading] = useState(false);
   const [bundleError, setBundleError] = useState("");
   const bundlePromise = useRef(null);
@@ -25,6 +26,14 @@ function TemplateView({ template, onOpenSection }) {
     [sections],
   );
   const Component = template.Component;
+
+  useEffect(() => {
+    setBundle(null);
+    setEditedBundle(null);
+    setBundleLoading(false);
+    setBundleError("");
+    bundlePromise.current = null;
+  }, [template.id]);
 
   const loadBundle = useCallback(async () => {
     if (bundle !== null) return bundle;
@@ -66,6 +75,7 @@ function TemplateView({ template, onOpenSection }) {
     },
     [bundle, loadBundle],
   );
+  const getCode = useCallback(async () => editedBundle ?? loadBundle(), [editedBundle, loadBundle]);
 
   return (
     <div className="space-y-6">
@@ -85,7 +95,7 @@ function TemplateView({ template, onOpenSection }) {
             <ViewSwitcher value={view} onChange={handleViewChange} />
             {view === "preview" && <DeviceSwitcher value={device} onChange={setDevice} />}
             <CopyButton
-              getCode={loadBundle}
+              getCode={getCode}
               label="Copy Code"
               successMessage={`${template.name} standalone page code copied!`}
             />
@@ -107,7 +117,9 @@ function TemplateView({ template, onOpenSection }) {
               </div>
               <PreviewFrame width="100%" autoHeight={false} height="min(78vh, 900px)" title={`${template.name} preview`}>
                 <Suspense fallback={<LoadingSkeleton label={`Loading ${template.name} template`} className="min-h-[70vh]" />}>
-                  <Component />
+                  <div className="design-surface">
+                    <Component />
+                  </div>
                 </Suspense>
               </PreviewFrame>
             </div>
@@ -122,7 +134,7 @@ function TemplateView({ template, onOpenSection }) {
         ) : bundleLoading && bundle === null ? (
           <LoadingSkeleton label={`Loading ${template.name} source`} className="m-4" />
         ) : bundle !== null ? (
-          <CodeView code={bundle} maxHeight="78vh" />
+          <CodeView code={editedBundle ?? bundle} onChange={setEditedBundle} maxHeight="78vh" />
         ) : null}
       </div>
 

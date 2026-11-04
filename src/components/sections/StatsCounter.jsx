@@ -53,17 +53,15 @@ export default function StatsCounter() {
           {STATS_COUNTER_ITEMS.map((stat, i) => (
             <div
               key={stat.label}
-              className={`group bg-white p-8 text-center transition-all duration-700 hover:bg-slate-50 ${
-                visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-              }`}
+              className={`group bg-white p-8 text-center transition-all duration-700 hover:bg-slate-50 ${ visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0" } ease-out`}
               style={{ transitionDelay: `${i * 120}ms` }}
             >
-              <p className="bg-gradient-to-br from-slate-900 to-slate-500 bg-clip-text text-5xl font-bold tabular-nums tracking-tight text-transparent">
+              <p className="bg-gradient-to-br from-slate-900 to-slate-500 bg-clip-text text-5xl font-bold tabular-nums tracking-tight text-transparent leading-relaxed">
                 <StatsCountUp value={stat.value} decimals={stat.decimals} start={visible} />
                 {stat.suffix}
               </p>
-              <p className="mt-3 text-sm font-medium uppercase tracking-wider text-slate-500">{stat.label}</p>
-              <div className="mx-auto mt-4 h-1 w-0 rounded-full bg-gradient-to-r from-indigo-500 to-sky-400 transition-all duration-500 group-hover:w-12" />
+              <p className="mt-4 text-sm font-medium uppercase tracking-wider text-slate-500 leading-relaxed">{stat.label}</p>
+              <div className="mx-auto mt-4 h-1 w-0 rounded-full bg-gradient-to-r from-indigo-500 to-sky-400 transition-all duration-500 group-hover:w-12 ease-out" />
             </div>
           ))}
         </div>

@@ -35,15 +35,13 @@ export default function PricingTable() {
     <section className="bg-white px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">Simple, transparent pricing</h2>
-          <p className="mt-4 text-lg text-slate-500">Start free. Upgrade when you&apos;re ready. No hidden fees.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl leading-tight">Simple, transparent pricing</h2>
+          <p className="mt-4 text-lg text-slate-500 leading-relaxed">Start free. Upgrade when you&apos;re ready. No hidden fees.</p>
 
-          <div className="mt-10 inline-flex items-center gap-3">
-            <div className="relative grid grid-cols-2 rounded-full bg-slate-100 p-1">
+          <div className="mt-10 inline-flex items-center gap-4">
+            <div className="relative grid grid-cols-2 rounded-full bg-slate-100 p-2">
               <span
-                className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow transition-transform duration-300 ease-out ${
-                  annual ? "translate-x-full" : "translate-x-0"
-                }`}
+                className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow transition-transform duration-300 ease-out ${ annual ? "translate-x-full" : "translate-x-0" }`}
               />
               <button
                 type="button"
@@ -64,7 +62,7 @@ export default function PricingTable() {
                 Annual
               </button>
             </div>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Save 20%</span>
+            <span className="rounded-full bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-700">Save 20%</span>
           </div>
         </div>
 
@@ -75,45 +73,37 @@ export default function PricingTable() {
             return (
               <div
                 key={tier.name}
-                className={`relative flex flex-col rounded-3xl p-8 transition duration-300 hover:-translate-y-1 ${
-                  tier.popular
-                    ? "bg-slate-900 text-white shadow-2xl shadow-indigo-500/30 ring-2 ring-indigo-500 lg:scale-105"
-                    : "bg-white text-slate-900 ring-1 ring-slate-200 hover:shadow-xl"
-                }`}
+                className={`relative flex flex-col rounded-3xl p-8 transition duration-300 hover:-translate-y-1 ${ tier.popular ? "bg-slate-900 text-white shadow-xl shadow-indigo-500/30 ring-2 ring-indigo-500 lg:scale-105" : "bg-white text-slate-900 ring-1 ring-slate-200 hover:shadow-xl" } ease-out`}
               >
                 {tier.popular && (
-                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-4 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg">
+                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg">
                     Most popular
                   </span>
                 )}
 
-                <h3 className="text-lg font-semibold">{tier.name}</h3>
-                <p className={`mt-1 text-sm ${tier.popular ? "text-slate-400" : "text-slate-500"}`}>{tier.description}</p>
+                <h3 className="text-lg font-semibold leading-tight tracking-tight">{tier.name}</h3>
+                <p className={`mt-2 text-sm ${tier.popular ? "text-slate-400" : "text-slate-500"} leading-relaxed`}>{tier.description}</p>
 
-                <div className="mt-6 flex items-baseline gap-1">
+                <div className="mt-6 flex items-baseline gap-2">
                   <span key={`${tier.name}-${annual}`} className="text-5xl font-bold tracking-tight animate-[pricing-pop_400ms_ease-out]">
                     ${priceLabel}
                   </span>
                   <span className={tier.popular ? "text-slate-400" : "text-slate-500"}>/month</span>
                 </div>
-                <p className={`mt-1 h-5 text-xs ${tier.popular ? "text-slate-400" : "text-slate-500"}`}>
+                <p className={`mt-2 h-5 text-xs ${tier.popular ? "text-slate-400" : "text-slate-500"} leading-relaxed`}>
                   {annual && price > 0 ? `Billed $${(price * 12).toFixed(2).replace(/\.00$/, "")} yearly` : price > 0 ? "Billed monthly" : "Free forever"}
                 </p>
 
                 <a
                   href="#"
-                  className={`mt-8 rounded-xl px-4 py-3 text-center text-sm font-semibold transition ${
-                    tier.popular
-                      ? "bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white hover:opacity-90"
-                      : "bg-slate-900 text-white hover:bg-slate-700"
-                  }`}
+                  className={`mt-8 rounded-xl px-4 py-4 text-center text-sm font-semibold ${ tier.popular ? "bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white hover:opacity-90" : "bg-slate-900 hover:bg-slate-700" } transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400`}
                 >
                   {tier.cta}
                 </a>
 
-                <ul className="mt-8 space-y-3 text-sm">
+                <ul className="mt-8 space-y-4 text-sm">
                   {tier.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3">
+                    <li key={f} className="flex items-center gap-4 leading-relaxed">
                       <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full ${tier.popular ? "bg-indigo-500/20 text-indigo-300" : "bg-emerald-100 text-emerald-600"}`}>
                         <svg viewBox="0 0 20 20" className="h-3 w-3 fill-current">
                           <path d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0z" />
@@ -123,7 +113,7 @@ export default function PricingTable() {
                     </li>
                   ))}
                   {tier.missing.map((f) => (
-                    <li key={f} className={`flex items-center gap-3 line-through ${tier.popular ? "text-slate-600" : "text-slate-400"}`}>
+                    <li key={f} className={`flex items-center gap-4 line-through ${tier.popular ? "text-slate-600" : "text-slate-400"} leading-relaxed`}>
                       <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-slate-100/10 text-xs">✕</span>
                       {f}
                     </li>

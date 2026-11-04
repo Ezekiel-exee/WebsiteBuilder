@@ -5,19 +5,36 @@ import LoadingSkeleton from "./LoadingSkeleton";
 import PreviewFrame from "./PreviewFrame";
 import { DEVICES, DeviceSwitcher, ViewSwitcher } from "./Controls";
 import Icon from "./Icon";
+import { customizeSource, discoverTargets, getPreviewStyle, isCustomColor } from "../../utils/customizer";
 
-function ShowcaseCard({ id, item }) {
+function ShowcaseCard({ id, item, customization, elementOverrides, selectedTarget, isStudioSelected, onTargetsDiscovered }) {
   const [view, setView] = useState("preview");
   const [device, setDevice] = useState("desktop");
   const [reloadKey, setReloadKey] = useState(0);
   const [previewReady, setPreviewReady] = useState(false);
   const [code, setCode] = useState(null);
+  const [editedCode, setEditedCode] = useState(null);
   const [codeLoading, setCodeLoading] = useState(false);
   const [codeError, setCodeError] = useState("");
   const cardRef = useRef(null);
   const codePromise = useRef(null);
   const Component = item.Component;
   const width = DEVICES.find((d) => d.id === device).width;
+  const activeSettings = { ...customization, ...(elementOverrides[selectedTarget] || {}) };
+  const exportSettings = { ...customization, elementOverrides };
+
+  const handleFrameContentNode = useCallback((mountNode) => {
+    const updateTargets = () => {
+      const root = mountNode.querySelector(".studio-surface");
+      if (!root) return;
+      const found = discoverTargets(root);
+      onTargetsDiscovered(id, found);
+    };
+    updateTargets();
+    const observer = new MutationObserver(updateTargets);
+    observer.observe(mountNode, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [id, onTargetsDiscovered]);
 
   useEffect(() => {
     if (view !== "preview" || previewReady) return undefined;
@@ -68,18 +85,32 @@ function ShowcaseCard({ id, item }) {
     [code, loadCode],
   );
 
-  const lines = code === null ? null : code.split("\n").length;
+  const customizedCode = code === null ? null : customizeSource(code, exportSettings);
+  const activeCode = editedCode ?? customizedCode;
+  const lines = activeCode === null ? null : activeCode.split("\n").length;
+  const getCustomizedCode = useCallback(async () =>
+    editedCode ?? customizeSource(await loadCode(), exportSettings),
+  [editedCode, exportSettings, loadCode]);
+
+  useEffect(() => {
+    setEditedCode(null);
+  }, [customizedCode]);
 
   return (
     <article
       ref={cardRef}
       id={id}
-      className="scroll-mt-24 overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/60 shadow-2xl shadow-black/40"
+      className={`scroll-mt-24 overflow-hidden rounded-2xl border bg-zinc-900/60 shadow-2xl shadow-black/40 ${isStudioSelected ? "border-cyan-400/40 ring-1 ring-cyan-400/20" : "border-white/10"}`}
     >
       <header className="flex flex-col gap-4 border-b border-white/10 bg-zinc-900/80 px-5 py-4 backdrop-blur xl:flex-row xl:items-center xl:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-semibold text-white">{item.name}</h3>
+            {isStudioSelected && (
+              <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-cyan-200">
+                Editing
+              </span>
+            )}
             {item.featured && (
               <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-950">
                 <Icon name="sparkles" className="h-3 w-3" /> Featured
@@ -112,7 +143,7 @@ function ShowcaseCard({ id, item }) {
               </button>
             </>
           )}
-          <CopyButton getCode={loadCode} successMessage={`${item.name} copied to clipboard!`} />
+          <CopyButton getCode={getCustomizedCode} successMessage={`${item.name} copied to clipboard!`} />
         </div>
       </header>
 
@@ -125,10 +156,30 @@ function ShowcaseCard({ id, item }) {
               autoHeight={false}
               height="min(78vh, 900px)"
               title={`${item.name} preview`}
+              backgroundColor={customization.mode === "light" ? "#f8fafc" : "#09090b"}
+              onContentNode={handleFrameContentNode}
             >
               {previewReady ? (
                 <Suspense fallback={<LoadingSkeleton label={`Loading ${item.name} preview`} />}>
-                  <Component />
+                  <div
+                    className="studio-surface design-surface min-h-full"
+                    data-mode={customization.mode}
+                    data-hover={customization.hover}
+                    data-animation={customization.animation}
+                    data-selected-target={selectedTarget}
+                    data-target-hover={elementOverrides[selectedTarget]?.hover || "inherit"}
+                    data-target-animation={elementOverrides[selectedTarget]?.animation || "inherit"}
+                    data-target-customized={Object.keys(elementOverrides[selectedTarget] || {}).join(" ")}
+                    data-custom-container={isCustomColor(customization.container)}
+                    data-custom-heading={isCustomColor(customization.heading)}
+                    data-custom-body={isCustomColor(customization.body)}
+                    data-custom-accent={isCustomColor(customization.accent)}
+                    data-custom-border={isCustomColor(customization.border)}
+                    data-custom-border-width={customization.borderWidth != null}
+                    style={getPreviewStyle(customization, activeSettings)}
+                  >
+                    <Component />
+                  </div>
                 </Suspense>
               ) : (
                 <LoadingSkeleton label={`Waiting to load ${item.name} preview`} />
@@ -145,8 +196,8 @@ function ShowcaseCard({ id, item }) {
         </div>
       ) : codeLoading && code === null ? (
         <LoadingSkeleton label={`Loading ${item.name} source`} className="m-4" />
-      ) : code !== null ? (
-        <CodeView code={code} />
+      ) : customizedCode !== null ? (
+        <CodeView code={activeCode} onChange={setEditedCode} />
       ) : null}
 
       <footer className="flex items-center justify-between border-t border-white/5 px-5 py-2.5 text-xs text-zinc-500">

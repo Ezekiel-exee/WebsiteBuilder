@@ -25,13 +25,13 @@ export default function NewsletterFooter() {
       <div className="mx-auto max-w-7xl px-6 pb-10 pt-20">
         <div className="grid gap-12 lg:grid-cols-[1.4fr_2fr]">
           <div>
-            <a href="#" className="flex items-center gap-2 text-xl font-bold text-white">
+            <a href="#" className="flex items-center gap-2 text-xl font-bold text-white transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 font-black">
                 N
               </span>
               Nebula
             </a>
-            <p className="mt-5 max-w-sm leading-relaxed">
+            <p className="mt-6 max-w-sm leading-relaxed">
               The fastest way to design, build, and launch beautiful websites. Made for teams that care about craft.
             </p>
 
@@ -45,7 +45,7 @@ export default function NewsletterFooter() {
               <label htmlFor="footer-email" className="text-sm font-semibold text-white">
                 Subscribe to our newsletter
               </label>
-              <div className="mt-3 flex rounded-xl border border-white/10 bg-white/5 p-1.5 transition focus-within:border-violet-500/60 focus-within:ring-4 focus-within:ring-violet-500/10">
+              <div className="mt-4 flex rounded-xl border border-white/10 bg-white/5 p-2 transition focus-within:border-violet-500/60 focus-within:ring-4 focus-within:ring-violet-500/10">
                 <input
                   id="footer-email"
                   type="email"
@@ -59,23 +59,23 @@ export default function NewsletterFooter() {
                 <button
                   type="submit"
                   disabled={subscribed}
-                  className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-violet-200 disabled:bg-emerald-400"
+                  className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-violet-200 disabled:bg-emerald-400 transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
                 >
                   {subscribed ? "Subscribed ✓" : "Subscribe"}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-zinc-600">No spam. Unsubscribe at any time.</p>
+              <p className="mt-2 text-xs text-zinc-600 leading-relaxed">No spam. Unsubscribe at any time.</p>
             </form>
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
             {NEWSLETTER_FOOTER_COLUMNS.map((col) => (
               <div key={col.title}>
-                <h3 className="text-sm font-semibold text-white">{col.title}</h3>
-                <ul className="mt-4 space-y-3 text-sm">
+                <h3 className="text-sm font-semibold text-white leading-tight tracking-tight">{col.title}</h3>
+                <ul className="mt-4 space-y-4 text-sm">
                   {col.links.map((link) => (
                     <li key={link}>
-                      <a href="#" className="transition hover:translate-x-0.5 hover:text-white">
+                      <a href="#" className="hover:translate-x-0.5 hover:text-white transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">
                         {link}
                       </a>
                     </li>
@@ -87,14 +87,14 @@ export default function NewsletterFooter() {
         </div>
 
         <div className="mt-16 flex flex-col-reverse items-center justify-between gap-6 border-t border-white/10 pt-8 sm:flex-row">
-          <p className="text-sm">© {new Date().getFullYear()} Nebula Inc. All rights reserved.</p>
-          <div className="flex gap-3">
+          <p className="text-sm leading-relaxed">© {new Date().getFullYear()} Nebula Inc. All rights reserved.</p>
+          <div className="flex gap-4">
             {NEWSLETTER_FOOTER_SOCIALS.map((s) => (
               <a
                 key={s.name}
                 href="#"
                 aria-label={s.name}
-                className="grid h-10 w-10 place-items-center rounded-full border border-white/10 transition hover:-translate-y-0.5 hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-white"
+                className="grid h-10 w-10 place-items-center rounded-full border border-white/10 hover:-translate-y-0.5 hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-white transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
                   <path d={s.path} />
