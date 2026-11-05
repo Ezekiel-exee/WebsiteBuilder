@@ -1,11 +1,24 @@
 import { useEffect, useRef } from "react";
+import { TouchDock } from "./TouchControls";
 
-export function GameFrame({ title, description, status, metrics, onBack, backLabel = "< games", onRestart, canRestart = true, onKeyDown, onKeyUp, controls, children }) {
+// `touch` describes the on-screen gamepad shown on touch devices: { dpad, buttons, onPause, extra }.
+export function GameFrame({ title, description, status, metrics, onBack, backLabel = "< games", onRestart, canRestart = true, onKeyDown, onKeyUp, controls, touch, children }) {
   const frameRef = useRef(null);
   const restartRef = useRef(null);
   const statusLabel = { ready: "READY", running: "RUNNING", won: "COMPLETED", lost: "GAME OVER" }[status] || status.toUpperCase();
   const statusColor = status === "running" ? "text-emerald-300" : status === "won" ? "text-cyan-300" : status === "lost" ? "text-rose-300" : status === "paused" ? "text-amber-300" : "text-zinc-400";
   useEffect(() => frameRef.current?.focus(), [title]);
+  const playRef = useRef(null);
+  const previousStatus = useRef(null);
+  // With the on-screen gamepad pinned to the bottom, bring the arena into view when a run starts so it isn't scrolled out of sight.
+  useEffect(() => {
+    const starting = (previousStatus.current === "ready" || previousStatus.current === null) && status === "running";
+    previousStatus.current = status;
+    if (!starting || !touch || !window.matchMedia("(max-width: 639px), (pointer: coarse)").matches) return;
+    const canvas = playRef.current?.querySelector("canvas");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    canvas?.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+  }, [status, touch]);
   useEffect(() => {
     if (status === "lost") restartRef.current?.focus();
   }, [status]);
@@ -50,7 +63,7 @@ export function GameFrame({ title, description, status, metrics, onBack, backLab
       </div>
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_15rem]">
-        <div className="relative min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-[#080a0f] p-3 sm:p-5">
+        <div ref={playRef} className="relative min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-[#080a0f] p-3 sm:p-5">
           {children}
           {status === "lost" && (
             <div className="fixed inset-0 z-50 grid place-items-center bg-[#05070b]/75 p-4" role="alertdialog" aria-modal="true" aria-labelledby="arcade-game-over-title">
@@ -102,6 +115,7 @@ export function GameFrame({ title, description, status, metrics, onBack, backLab
           </div>
         </aside>
       </div>
+      {touch && <TouchDock {...touch} />}
     </div>
   );
 }
@@ -112,46 +126,4 @@ export function useAutomaticLevelAdvance(status, onLevelAdvance) {
     const timer = window.setTimeout(onLevelAdvance, 1400);
     return () => window.clearTimeout(timer);
   }, [status, onLevelAdvance]);
-}
-
-// Press-and-hold touch button (visible below the sm breakpoint only when the parent hides it above).
-export function ByteControlButton({ label, onPress, onRelease }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onPointerDown={(event) => {
-        event.preventDefault();
-        event.currentTarget.setPointerCapture(event.pointerId);
-        onPress();
-      }}
-      onPointerUp={onRelease}
-      onPointerCancel={onRelease}
-      className="touch-none select-none rounded-lg border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-zinc-200 active:border-cyan-300/40 active:bg-cyan-300/10"
-    >
-      {label}
-    </button>
-  );
-}
-
-// D-pad for grid games. onMove(dx, dy) fires once per tap; onAction is optional.
-export function GamePad({ onMove, onAction, actionLabel = "ACTION" }) {
-  const base = "touch-manipulation select-none rounded border border-white/10 bg-white/5 py-2 font-mono text-sm text-zinc-200 transition duration-75 active:scale-95";
-  return (
-    <div className="mt-4 grid w-36 grid-cols-3 gap-1.5 sm:hidden" aria-label="Touch controls">
-      <span />
-      <button type="button" aria-label="Move up" onClick={() => onMove(0, -1)} className={base}>↑</button>
-      <span />
-      <button type="button" aria-label="Move left" onClick={() => onMove(-1, 0)} className={base}>←</button>
-      {onAction ? (
-        <button type="button" aria-label={actionLabel} onClick={onAction} className="rounded border border-cyan-400/20 bg-cyan-400/10 py-2 font-mono text-[9px] text-cyan-200">{actionLabel}</button>
-      ) : (
-        <span className="grid place-items-center font-mono text-[10px] text-zinc-700">+</span>
-      )}
-      <button type="button" aria-label="Move right" onClick={() => onMove(1, 0)} className={base}>→</button>
-      <span />
-      <button type="button" aria-label="Move down" onClick={() => onMove(0, 1)} className={base}>↓</button>
-      <span />
-    </div>
-  );
 }

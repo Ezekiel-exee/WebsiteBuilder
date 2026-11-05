@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { GameFrame, GamePad, useAutomaticLevelAdvance } from "../GameFrame";
+import { GameFrame, useAutomaticLevelAdvance } from "../GameFrame";
+import { DIR_VECTORS } from "../TouchControls";
 import { directionFromKey, prepareCanvas } from "../arcadeKit";
 import { HEIGHT, WIDTH, createSnakeWorld, queueTurn, snakeCarry, snakeHud, updateSnake } from "./snakeEngine";
 import { drawSnake2d } from "./snakeRender";
@@ -185,7 +186,8 @@ export default function SnakeGame({ difficulty, level, onBack, onLevelAdvance })
       onBack={onBack}
       onRestart={reset}
       onKeyDown={onKeyDown}
-      controls="W A S D or the arrow keys steer (swipe or use the pad on touch). Reversals are ignored and up to 3 turns are buffered. P pauses. Eat cyan bytes for combo points; golden BONUS is worth big points, TURBO speeds you up, SLEEP slows you down, GC trims 3 segments, and a GIT COMMIT gives a shield that absorbs one crash. Easy wraps through the edges; medium and hard have solid walls."
+      touch={{ dpad: { onPress: (direction) => steer(...DIR_VECTORS[direction]) }, onPause: togglePause }}
+      controls="W A S D or the arrow keys steer (swipe the arena or use the on-screen D-pad on touch). Reversals are ignored and up to 3 turns are buffered. P pauses. Eat cyan bytes for combo points; golden BONUS is worth big points, TURBO speeds you up, SLEEP slows you down, GC trims 3 segments, and a GIT COMMIT gives a shield that absorbs one crash. Easy wraps through the edges; medium and hard have solid walls."
     >
       <div className="mx-auto max-w-[800px]">
         <canvas
@@ -201,9 +203,6 @@ export default function SnakeGame({ difficulty, level, onBack, onLevelAdvance })
         >
           Snake arena
         </canvas>
-        <div className="flex justify-center">
-          <GamePad onMove={steer} />
-        </div>
         {status === "won" && <p role="status" className="mt-3 text-center font-mono text-xs text-emerald-300">level cleared — loading level {level + 1}…</p>}
       </div>
     </GameFrame>

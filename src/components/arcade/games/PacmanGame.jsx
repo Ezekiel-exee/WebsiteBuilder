@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { directionFromKey, prepareCanvas, useGameLoop } from "../arcadeKit";
-import { GamePad, GameFrame, useAutomaticLevelAdvance } from "../GameFrame";
+import { GameFrame, useAutomaticLevelAdvance } from "../GameFrame";
+import { DIR_VECTORS } from "../TouchControls";
 import { DOWN, LEFT, RIGHT, STEP, UP, beginPlay, createGame, pacmanHud, pacmanStatus, queueDirection, startingLives, update } from "./pacmanEngine";
 import { HEIGHT, WIDTH, createPacmanRenderer, drawPacman } from "./pacmanRender";
 
@@ -199,7 +200,14 @@ export default function PacmanGame({ difficulty = "medium", level = 1, onBack, o
       onRestart={reset}
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
-      controls="WASD or arrow keys steer — queue a turn early and Pac-Man takes it at the next junction. P pauses. Swipe the maze on touch screens. Power pellets let you eat ghosts (200, 400, 800, 1600). Fruit appears twice a level, and you earn an extra life at 10,000 points."
+      touch={{
+        dpad: {
+          onPress: (direction) => press(dirIndex(...DIR_VECTORS[direction])),
+          onRelease: (direction) => release(dirIndex(...DIR_VECTORS[direction])),
+        },
+        onPause: () => setStatus((current) => (current === "running" ? "paused" : current === "paused" ? "running" : current)),
+      }}
+      controls="WASD or arrow keys steer — queue a turn early and Pac-Man takes it at the next junction. P pauses. On touch, use the on-screen D-pad or swipe the maze. Power pellets let you eat ghosts (200, 400, 800, 1600). Fruit appears twice a level, and you earn an extra life at 10,000 points."
     >
       <div className="mx-auto max-w-[560px]">
         <canvas
@@ -215,9 +223,6 @@ export default function PacmanGame({ difficulty = "medium", level = 1, onBack, o
         >
           Pac-Man maze
         </canvas>
-        <div className="flex justify-center">
-          <GamePad onMove={(dx, dy) => tap(dirIndex(dx, dy))} />
-        </div>
       </div>
     </GameFrame>
   );

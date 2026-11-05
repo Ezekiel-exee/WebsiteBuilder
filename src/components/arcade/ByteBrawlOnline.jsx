@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ENEMY_TYPES, MAPS, STEP, advanceView, applySnapshot, ARENA_H, ARENA_W, brawlHud, createBrawl, createViewWorld, describeFighters, drawBrawl, matchOutcome, snapshotBrawl, stepBrawl } from "./byteBrawlEngine";
 import { MAX_PLAYERS, extractCode, inviteLink, joinRoom, openRoom, safeSend, sendLatest } from "./byteBrawlNet";
 import { StagePreview, DropsGuide } from "./ByteBrawlSetup";
+import { brawlTouch } from "./TouchControls";
 import { copyToClipboard } from "../../utils/clipboard";
 
 const DEFAULT_SETTINGS = { teamMode: "coop", stage: 0, opponents: 2, round: 1 };
@@ -249,7 +250,7 @@ function Lobby({ role, code, players, settings, difficulty, myId, signal, onChan
 }
 
 function OnlineMatch({ ui, role, scene, myId, code, net, handlerRef, onRematch, onLobby, onLeave }) {
-  const { GameFrame, ByteControlButton } = ui;
+  const { GameFrame } = ui;
   const canvasRef = useRef(null);
   const keysRef = useRef(new Set());
   const jumpSeqRef = useRef(0);
@@ -426,6 +427,7 @@ function OnlineMatch({ ui, role, scene, myId, code, net, handlerRef, onRematch, 
       canRestart={host}
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
+      touch={brawlTouch(holdKey, releaseKey)}
       controls="A/D or ←/→ move. W, ↑, or Space jumps (twice in the air). S or ↓ drops through a platform. Hold J, K, Z, or Enter to fire. Hits add damage; more damage means more knockback. Pick up crates for better weapons."
     >
       <div className="mx-auto max-w-[800px]">
@@ -456,17 +458,6 @@ function OnlineMatch({ ui, role, scene, myId, code, net, handlerRef, onRematch, 
             </div>
           </div>
         )}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 sm:hidden">
-          <div className="flex gap-2" aria-label="Movement controls">
-            <ByteControlButton label="◀" onPress={() => holdKey("a")} onRelease={() => releaseKey("a")} />
-            <ByteControlButton label="▶" onPress={() => holdKey("d")} onRelease={() => releaseKey("d")} />
-            <ByteControlButton label="▼" onPress={() => holdKey("s")} onRelease={() => releaseKey("s")} />
-          </div>
-          <div className="flex gap-2">
-            <ByteControlButton label="JUMP" onPress={() => holdKey("w")} onRelease={() => releaseKey("w")} />
-            <ByteControlButton label="FIRE" onPress={() => holdKey("j")} onRelease={() => releaseKey("j")} />
-          </div>
-        </div>
       </div>
     </GameFrame>
   );

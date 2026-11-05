@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { directionFromKey, prepareCanvas } from "../arcadeKit";
-import { GameFrame, GamePad, useAutomaticLevelAdvance } from "../GameFrame";
+import { GameFrame, useAutomaticLevelAdvance } from "../GameFrame";
 import { OPEN, boardLayout, boardSpec, chordCell, createGame, formatTime, levelBonus, moveIndex, revealCell, tickTimer, toggleFlag } from "./minesweeperEngine";
 import { REVEAL_MS, drawMinesweeper } from "./minesweeperRender";
 import { loadBestTime, saveBestTime } from "./minesweeperStorage";
@@ -50,6 +50,9 @@ export default function MinesweeperGame({ difficulty = "easy", level = 1, onBack
     return { left: game.mines - game.flags, time: Math.floor(game.elapsed), best: bestRef.current.value, score: scoreNow() };
   };
   const [status, setStatusState] = useState("ready");
+  const [flagMode, setFlagMode] = useState(false);
+  const flagModeRef = useRef(false);
+  flagModeRef.current = flagMode;
   const [hud, setHud] = useState(readHud);
   hudRef.current = hud;
   useAutomaticLevelAdvance(status, onLevelAdvance);
@@ -321,7 +324,10 @@ export default function MinesweeperGame({ difficulty = "easy", level = 1, onBack
       const long = pointer.longPressed;
       pointer.touchIndex = -1;
       pointer.longPressed = false;
-      if (index >= 0 && !long) smartReveal(index);
+      if (index >= 0 && !long) {
+        if (flagModeRef.current && gameRef.current.cell[index] !== OPEN) act("flag", index);
+        else smartReveal(index);
+      }
       return;
     }
     if (event.button === 0) {
@@ -380,7 +386,28 @@ export default function MinesweeperGame({ difficulty = "easy", level = 1, onBack
       onBack={onBack}
       onRestart={reset}
       onKeyDown={onKeyDown}
-      controls="Click or press a key to start. Left click or Enter/Space reveals, right click or F flags, middle click, double click, left+right, or C chords around a satisfied number. WASD or arrows move the cursor. On touch: tap reveals (or chords a number), press and hold flags. P pauses. The first tile is always safe; every cleared level starts a bigger board."
+      touch={{
+        onPause: togglePause,
+        extra: (
+          <div role="group" aria-label="Tap action" className="pointer-events-auto flex w-full max-w-xs gap-1 rounded-2xl border border-white/15 bg-zinc-900/70 p-1 font-mono text-sm font-bold backdrop-blur-sm">
+            {[["reveal", "⛏ REVEAL", false], ["flag", "⚑ FLAG", true]].map(([id, label, value]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={flagMode === value}
+                onClick={() => {
+                  setFlagMode(value);
+                  navigator.vibrate?.(8);
+                }}
+                className={`h-14 flex-1 touch-manipulation rounded-xl transition-colors ${flagMode === value ? (value ? "bg-amber-300/30 text-amber-100" : "bg-cyan-300/30 text-cyan-100") : "text-zinc-400"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ),
+      }}
+      controls="Click or press a key to start. Left click or Enter/Space reveals, right click or F flags, middle click, double click, left+right, or C chords around a satisfied number. WASD or arrows move the cursor. On touch: tap a tile to reveal it (or chord a number), press and hold to flag, or switch the bottom toggle to FLAG to flag with a tap. P pauses. The first tile is always safe; every cleared level starts a bigger board."
     >
       <div className="mx-auto" style={{ maxWidth: layout.width }}>
         <canvas
@@ -399,14 +426,6 @@ export default function MinesweeperGame({ difficulty = "easy", level = 1, onBack
         >
           Minesweeper board
         </canvas>
-        <div className="flex flex-wrap items-start gap-4 sm:hidden">
-          <GamePad onMove={moveCursor} onAction={() => press("reveal")} actionLabel="OPEN" />
-          <div className="mt-4 flex gap-2 font-mono text-xs">
-            <button type="button" onClick={() => press("flag")} className="touch-manipulation rounded border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-amber-200 active:scale-95">FLAG</button>
-            <button type="button" onClick={() => press("chord")} className="touch-manipulation rounded border border-violet-300/30 bg-violet-300/10 px-3 py-2 text-violet-200 active:scale-95">CHORD</button>
-            <button type="button" onClick={togglePause} className="touch-manipulation rounded border border-white/10 bg-white/5 px-3 py-2 text-zinc-300 active:scale-95">PAUSE</button>
-          </div>
-        </div>
         {status === "won" && <p role="status" className="mt-3 font-mono text-xs text-emerald-300">sector cleared — loading level {level + 1} with a larger board…</p>}
       </div>
     </GameFrame>

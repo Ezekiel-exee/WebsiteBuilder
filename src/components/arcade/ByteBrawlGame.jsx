@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { ARENA_H, ARENA_W, CAMPAIGN, STEP, brawlHud, brawlResult, createBrawl, drawBrawl, enemyTypes, stepBrawl } from "./byteBrawlEngine";
 import ByteBrawlSetup, { DropsGuide, saveCampaignProgress } from "./ByteBrawlSetup";
 import ByteBrawlOnline from "./ByteBrawlOnline";
-import { ByteControlButton, GameFrame, useAutomaticLevelAdvance } from "./GameFrame";
+import { GameFrame, useAutomaticLevelAdvance } from "./GameFrame";
+import { brawlTouch } from "./TouchControls";
 
 const NO_LEVEL_ADVANCE = () => {};
 
@@ -120,7 +121,8 @@ function ByteBrawlMatch({ setup, difficulty, level, onMenu, onLevelAdvance }) {
       onRestart={reset}
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
-      controls="A/D or ←/→ move. W, ↑, or Space jumps (twice in the air). S or ↓ drops through a platform. Hold J, K, Z, or Enter to fire. P pauses. Hits add damage, and more damage means more knockback — lose a stock when you leave the screen. Pick up gun crates (square) and power-ups (diamond)."
+      touch={brawlTouch(holdKey, releaseKey, () => setStatus((current) => (current === "running" ? "paused" : current === "paused" ? "running" : current)))}
+      controls="A/D or ←/→ move. W, ↑, or Space jumps (twice in the air). S or ↓ drops through a platform. Hold J, K, Z, or Enter to fire. P pauses. Hits add damage, and more damage means more knockback — lose a stock when you leave the screen. Pick up gun crates (square) and power-ups (diamond). On touch, use the on-screen D-pad and FIRE / JUMP buttons."
     >
       <div className="mx-auto max-w-[800px]">
         <canvas
@@ -141,15 +143,6 @@ function ByteBrawlMatch({ setup, difficulty, level, onMenu, onLevelAdvance }) {
         </ul>
         <DropsGuide />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-2 sm:hidden" aria-label="Movement controls">
-            <ByteControlButton label="◀" onPress={() => holdKey("a")} onRelease={() => releaseKey("a")} />
-            <ByteControlButton label="▶" onPress={() => holdKey("d")} onRelease={() => releaseKey("d")} />
-            <ByteControlButton label="▼" onPress={() => holdKey("s")} onRelease={() => releaseKey("s")} />
-          </div>
-          <div className="flex gap-2 sm:hidden">
-            <ByteControlButton label="JUMP" onPress={() => holdKey("w")} onRelease={() => releaseKey("w")} />
-            <ByteControlButton label="FIRE" onPress={() => holdKey("j")} onRelease={() => releaseKey("j")} />
-          </div>
           {status === "won" && !finalMission && <p role="status" className="w-full font-mono text-xs text-emerald-300">{campaign ? `mission complete — loading mission ${level + 1}…` : `round won — loading round ${level + 1}${level % 3 === 0 ? " · new enemy type incoming" : ""}…`}</p>}
           {status === "won" && finalMission && (
             <div role="status" className="w-full rounded-xl border border-orange-300/30 bg-orange-300/5 p-4 text-center">
@@ -168,6 +161,6 @@ function ByteBrawlMatch({ setup, difficulty, level, onMenu, onLevelAdvance }) {
 
 export default function ByteBrawl({ setup, onSetup, onMenu, difficulty, onBack, level, onLevelAdvance }) {
   if (!setup) return <ByteBrawlSetup onStart={onSetup} onBack={onBack} />;
-  if (setup.mode === "online") return <ByteBrawlOnline ui={{ GameFrame, ByteControlButton }} difficulty={difficulty} onExit={onMenu} invite={setup.invite} />;
+  if (setup.mode === "online") return <ByteBrawlOnline ui={{ GameFrame }} difficulty={difficulty} onExit={onMenu} invite={setup.invite} />;
   return <ByteBrawlMatch setup={setup} difficulty={difficulty} level={level} onMenu={onMenu} onLevelAdvance={onLevelAdvance} />;
 }

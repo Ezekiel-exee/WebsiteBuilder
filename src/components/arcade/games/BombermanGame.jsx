@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ByteControlButton, GameFrame, useAutomaticLevelAdvance } from "../GameFrame";
+import { GameFrame, useAutomaticLevelAdvance } from "../GameFrame";
 import { prepareCanvas, useGameLoop } from "../arcadeKit";
 import { CANVAS_H, CANVAS_W, ENEMY_TYPES, POWERUPS, POWERUP_ORDER, bomberHud, carryFromWorld, cloneCarry, createBomberman, freshCarry, stageLabel, stepBomberman } from "./bombermanEngine";
 import { drawBomberman } from "./bombermanRender";
 
 const HI_KEY = "arcade-bomberman-hi";
 const NO_ADVANCE = () => {};
-const NO_RELEASE = () => {};
 const DIR_BY_KEY = {
   w: [0, -1],
   arrowup: [0, -1],
@@ -222,7 +221,15 @@ export default function BombermanGame({ difficulty = "medium", level = 1, onBack
       onRestart={reset}
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
-      controls="WASD or arrows move. Space or J drops a bomb. K or Enter detonates (needs the Detonator). P pauses. Blow up soft blocks to find the exit door and the stage's hidden power-up, kill every enemy, then walk into the door. Bombing the exposed door releases more enemies. When the timer hits zero, fast DAEMONS hunt you down."
+      touch={{
+        dpad: { onPress: (direction) => touchDir(direction).onPress(), onRelease: (direction) => touchDir(direction).onRelease() },
+        buttons: [
+          { id: "bomb", label: "BOMB", tone: "amber", onPress: queueBomb },
+          ...(hud.detonator ? [{ id: "det", label: "DET", tone: "rose", onPress: queueDetonate }] : []),
+        ],
+        onPause: togglePause,
+      }}
+      controls="WASD or arrows move. Space or J drops a bomb. K or Enter detonates (needs the Detonator). P pauses. Blow up soft blocks to find the exit door and the stage's hidden power-up, kill every enemy, then walk into the door. Bombing the exposed door releases more enemies. When the timer hits zero, fast DAEMONS hunt you down. On touch, use the on-screen D-pad and BOMB / DET buttons."
     >
       <div className="mx-auto max-w-[680px]">
         <canvas
@@ -248,23 +255,6 @@ export default function BombermanGame({ difficulty = "medium", level = 1, onBack
             </li>
           ))}
         </ul>
-        <div className="mt-4 flex items-end justify-between gap-3 sm:hidden" aria-label="Touch controls">
-          <div className="grid w-40 grid-cols-3 gap-1.5">
-            <span />
-            <ByteControlButton label="▲" {...touchDir("up")} />
-            <span />
-            <ByteControlButton label="◀" {...touchDir("left")} />
-            <span />
-            <ByteControlButton label="▶" {...touchDir("right")} />
-            <span />
-            <ByteControlButton label="▼" {...touchDir("down")} />
-            <span />
-          </div>
-          <div className="flex flex-col gap-2">
-            <ByteControlButton label="BOMB" onPress={queueBomb} onRelease={NO_RELEASE} />
-            {hud.detonator && <ByteControlButton label="DET" onPress={queueDetonate} onRelease={NO_RELEASE} />}
-          </div>
-        </div>
         {status === "won" && (
           <p role="status" className="mt-3 font-mono text-xs text-emerald-300">
             stage clear — loading stage {stageLabel(level + 1)}…
