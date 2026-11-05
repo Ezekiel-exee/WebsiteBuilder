@@ -168,6 +168,6 @@ function ByteBrawlMatch({ setup, difficulty, level, onMenu, onLevelAdvance }) {
 
 export default function ByteBrawl({ setup, onSetup, onMenu, difficulty, onBack, level, onLevelAdvance }) {
   if (!setup) return <ByteBrawlSetup onStart={onSetup} onBack={onBack} />;
-  if (setup.mode === "online") return <ByteBrawlOnline ui={{ GameFrame, ByteControlButton }} difficulty={difficulty} onExit={onMenu} />;
+  if (setup.mode === "online") return <ByteBrawlOnline ui={{ GameFrame, ByteControlButton }} difficulty={difficulty} onExit={onMenu} invite={setup.invite} />;
   return <ByteBrawlMatch setup={setup} difficulty={difficulty} level={level} onMenu={onMenu} onLevelAdvance={onLevelAdvance} />;
 }

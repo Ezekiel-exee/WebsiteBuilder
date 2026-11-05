@@ -1,15 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ENEMY_TYPES, MAPS, STEP, advanceView, applySnapshot, ARENA_H, ARENA_W, brawlHud, createBrawl, createViewWorld, describeFighters, drawBrawl, matchOutcome, snapshotBrawl, stepBrawl } from "./byteBrawlEngine";
-import { MAX_PLAYERS, joinRoom, normalizeCode, openRoom } from "./byteBrawlNet";
+import { MAX_PLAYERS, extractCode, inviteLink, joinRoom, openRoom, safeSend, sendLatest } from "./byteBrawlNet";
 import { StagePreview, DropsGuide } from "./ByteBrawlSetup";
+import { copyToClipboard } from "../../utils/clipboard";
 
 const DEFAULT_SETTINGS = { teamMode: "coop", stage: 0, opponents: 2, round: 1 };
 const ROUND_CHOICES = ENEMY_TYPES.map((_, index) => index * 3 + 1);
 const CONTROL_KEYS = ["a", "d", "w", "s", "j", "k", "z", "enter", " ", "arrowleft", "arrowright", "arrowup", "arrowdown"];
 const PLAYER_SWATCHES = ["#a3e635", "#f1f5f9", "#818cf8"];
+const NAME_STORAGE_KEY = "blocksmith-bytebrawl-name";
+const PING_INTERVAL_MS = 3000;
+const SILENCE_TIMEOUT_MS = 15000;
 
 function cleanName(value) {
   return value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 10).toUpperCase() || "PLAYER";
+}
+
+function readSavedName() {
+  try {
+    return cleanName(window.localStorage.getItem(NAME_STORAGE_KEY) || "");
+  } catch {
+    return "PLAYER";
+  }
 }
 
 function OnlineHeader({ title, subtitle, onBack, backLabel = "< back" }) {
@@ -29,10 +41,16 @@ function OnlineHeader({ title, subtitle, onBack, backLabel = "< back" }) {
   );
 }
 
-function OnlineMenu({ name, setName, joinCode, setJoinCode, busy, error, onHost, onJoin, onBack }) {
+function OnlineMenu({ name, setName, joinCode, setJoinCode, busy, status, inviteCode, error, onHost, onJoin, onBack }) {
+  const joiningInvite = busy && inviteCode;
   return (
     <div>
-      <OnlineHeader title="Play online" subtitle="Host a room and share the code, or join a friend's room. Up to 3 players." onBack={onBack} backLabel="< menu" />
+      <OnlineHeader title="Play online" subtitle="Create a room and send your friend the invite link — they open it and join automatically. Up to 3 players." onBack={onBack} backLabel="< menu" />
+      {joiningInvite && (
+        <p role="status" className="mb-5 rounded-lg border border-cyan-300/30 bg-cyan-300/5 px-3 py-3 font-mono text-xs text-cyan-100">
+          joining room <span className="font-bold tracking-[0.25em]">{inviteCode}</span> · {status || "connecting…"}
+        </p>
+      )}
       <div className="mb-5 max-w-sm">
         <label className="grid gap-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
           Your name
@@ -47,9 +65,9 @@ function OnlineMenu({ name, setName, joinCode, setJoinCode, busy, error, onHost,
       <div className="grid gap-4 md:grid-cols-2">
         <section className="rounded-xl border border-white/10 bg-[#0b0d12] p-5">
           <h3 className="font-mono text-sm font-semibold text-zinc-100">$ host a room</h3>
-          <p className="mt-2 text-sm leading-6 text-zinc-400">You get a 5-character code. Friends enter it to join your lobby, where you choose allies or rivals and the stage.</p>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">You get an invite link to send to friends. They open it and land straight in your lobby, where you choose allies or rivals and the stage.</p>
           <button type="button" disabled={busy} onClick={onHost} className="mt-4 rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 font-mono text-xs font-semibold text-cyan-100 transition enabled:hover:bg-cyan-300/20 disabled:opacity-50">
-            {busy ? "connecting…" : "$ create room"}
+            {busy && !inviteCode ? status || "connecting…" : "$ create room"}
           </button>
         </section>
         <form
@@ -61,10 +79,14 @@ function OnlineMenu({ name, setName, joinCode, setJoinCode, busy, error, onHost,
         >
           <h3 className="font-mono text-sm font-semibold text-zinc-100">$ join a room</h3>
           <label className="mt-3 grid gap-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-            Room code
+            Room code or invite link
             <input
               value={joinCode}
-              onChange={(event) => setJoinCode(normalizeCode(event.target.value))}
+              onChange={(event) => setJoinCode(extractCode(event.target.value))}
+              onPaste={(event) => {
+                event.preventDefault();
+                setJoinCode(extractCode(event.clipboardData.getData("text")));
+              }}
               placeholder="ABCDE"
               autoComplete="off"
               spellCheck={false}
@@ -76,35 +98,59 @@ function OnlineMenu({ name, setName, joinCode, setJoinCode, busy, error, onHost,
           </button>
         </form>
       </div>
-      {error && <p role="alert" className="mt-4 rounded-lg border border-rose-400/30 bg-rose-400/5 px-3 py-2 font-mono text-xs text-rose-200">{error}</p>}
-      <p className="mt-5 font-mono text-[11px] leading-5 text-zinc-600">// peer-to-peer over WebRTC. a free public PeerJS broker only introduces players — gameplay data goes directly between browsers.</p>
+      {error && <p role="alert" className="mt-4 rounded-lg border border-rose-400/30 bg-rose-400/5 px-3 py-2 font-mono text-xs leading-5 text-rose-200">{error}</p>}
+      <p className="mt-5 font-mono text-[11px] leading-5 text-zinc-500">// peer-to-peer over WebRTC. a free public PeerJS broker only introduces players (with relay servers as a fallback for strict networks) — the host's browser runs the match.</p>
     </div>
   );
 }
 
-function Lobby({ role, code, players, settings, difficulty, myId, onChange, onStart, onLeave }) {
+function Lobby({ role, code, players, settings, difficulty, myId, signal, onChange, onStart, onLeave }) {
   const host = role === "host";
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState("");
+  const link = inviteLink(code);
   const rivals = settings.teamMode === "rivals";
   const canStart = host && (rivals ? players.length >= 2 : players.length >= 1);
-  const copyCode = () => {
-    navigator.clipboard?.writeText(code).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    });
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const copy = async (kind, text) => {
+    if (await copyToClipboard(text)) {
+      setCopied(kind);
+      window.setTimeout(() => setCopied(""), 1800);
+    }
   };
+  const share = () => navigator.share({ title: "Byte Brawl", text: "Join my Byte Brawl room!", url: link }).catch(() => {});
   return (
     <div>
-      <OnlineHeader title={host ? "Your room" : "Room lobby"} subtitle={host ? "Share the code. Start when everyone is in." : "Waiting for the host to start the match."} onBack={onLeave} backLabel="< leave" />
-      <div className="mb-5 flex flex-wrap items-center gap-4 rounded-xl border border-white/10 bg-[#0b0d12] p-4">
+      <OnlineHeader title={host ? "Your room" : "Room lobby"} subtitle={host ? "Send the invite link to your friends. Start when everyone is in." : "Connected! Waiting for the host to start the match."} onBack={onLeave} backLabel="< leave" />
+      {host && signal === "reconnecting" && (
+        <p role="status" className="mb-4 rounded-lg border border-amber-300/30 bg-amber-300/5 px-3 py-2 font-mono text-xs text-amber-200">reconnecting to the matchmaking server… players already inside stay connected, but new players can't join until it's back.</p>
+      )}
+      <div className="mb-5 grid gap-4 rounded-xl border border-white/10 bg-[#0b0d12] p-4 md:grid-cols-[auto_1fr]">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">Room code</p>
           <p className="font-mono text-3xl font-bold tracking-[0.35em] text-cyan-200" aria-label={`Room code ${code.split("").join(" ")}`}>{code}</p>
+          <p className="mt-1 font-mono text-xs text-zinc-500">DIFFICULTY <span className="text-zinc-200">{difficulty.toUpperCase()}</span></p>
         </div>
-        <button type="button" onClick={copyCode} className="rounded-lg border border-white/10 px-3 py-2 font-mono text-xs text-zinc-300 transition hover:bg-white/5">
-          {copied ? "copied!" : "$ copy code"}
-        </button>
-        <p className="font-mono text-xs text-zinc-500">DIFFICULTY <span className="text-zinc-200">{difficulty.toUpperCase()}</span></p>
+        {host && (
+          <div className="min-w-0">
+            <label className="grid gap-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+              Invite link
+              <input readOnly value={link} onFocus={(event) => event.target.select()} className="h-10 w-full min-w-0 truncate rounded-lg border border-white/10 bg-[#080a0f] px-3 font-mono text-xs normal-case tracking-normal text-zinc-200 outline-none focus:border-cyan-400/40" />
+            </label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" onClick={() => copy("link", link)} className="rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 font-mono text-xs font-semibold text-cyan-100 transition hover:bg-cyan-300/20">
+                {copied === "link" ? "link copied!" : "$ copy invite link"}
+              </button>
+              {canShare && (
+                <button type="button" onClick={share} className="rounded-lg border border-white/10 px-3 py-2 font-mono text-xs text-zinc-300 transition hover:bg-white/5">
+                  $ share…
+                </button>
+              )}
+              <button type="button" onClick={() => copy("code", code)} className="rounded-lg border border-white/10 px-3 py-2 font-mono text-xs text-zinc-300 transition hover:bg-white/5">
+                {copied === "code" ? "code copied!" : "$ copy code"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <section aria-label="Players" className="mb-5 grid gap-2 sm:grid-cols-3">
@@ -240,7 +286,7 @@ function OnlineMatch({ ui, role, scene, myId, code, net, handlerRef, onRematch, 
     const signature = `${dir}|${down}|${fire}|${jumpSeqRef.current}`;
     if (signature !== sentRef.current) {
       sentRef.current = signature;
-      net.hostConn?.send({ t: "input", dir, down, fire, jumpSeq: jumpSeqRef.current });
+      safeSend(net.hostConn, { t: "input", dir, down, fire, jumpSeq: jumpSeqRef.current });
     }
   }, [host, net]);
 
@@ -293,8 +339,8 @@ function OnlineMatch({ ui, role, scene, myId, code, net, handlerRef, onRematch, 
     let sinceSnapshot = 0;
     let frameCount = 0;
     let lastHud = "";
-    const sendAll = (message) => {
-      for (const connection of net.conns.values()) if (connection.open) connection.send(message);
+    const broadcast = (message, droppable) => {
+      for (const connection of net.conns.values()) (droppable ? sendLatest : safeSend)(connection, message);
     };
     const frame = (time) => {
       const delta = previousTime ? Math.min((time - previousTime) / 1000, 0.05) : 0;
@@ -316,10 +362,10 @@ function OnlineMatch({ ui, role, scene, myId, code, net, handlerRef, onRematch, 
         const outcome = scene.countdown > 0 ? null : matchOutcome(scene);
         if (sinceSnapshot >= 1 / 30 || outcome) {
           sinceSnapshot = 0;
-          sendAll({ t: "snap", s: snapshotBrawl(scene) });
+          broadcast({ t: "snap", s: snapshotBrawl(scene) }, !outcome);
         }
         if (outcome) {
-          sendAll({ t: "end", outcome });
+          broadcast({ t: "end", outcome });
           drawBrawl(context, scene, null);
           finish(outcome);
           return;
@@ -426,11 +472,13 @@ function OnlineMatch({ ui, role, scene, myId, code, net, handlerRef, onRematch, 
   );
 }
 
-export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
+export default function ByteBrawlOnline({ ui, difficulty, onExit, invite }) {
   const [phase, setPhase] = useState("menu");
-  const [name, setName] = useState("PLAYER");
-  const [joinCode, setJoinCode] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [name, setName] = useState(readSavedName);
+  const [joinCode, setJoinCode] = useState(invite?.code || "");
+  const [busy, setBusy] = useState(Boolean(invite?.code));
+  const [status, setStatus] = useState("");
+  const [signal, setSignal] = useState("online");
   const [error, setError] = useState("");
   const [role, setRole] = useState(null);
   const [code, setCode] = useState("");
@@ -439,9 +487,19 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
   const [roomDifficulty, setRoomDifficulty] = useState(difficulty);
   const [myId, setMyId] = useState(0);
   const [match, setMatch] = useState(null);
-  const net = useRef({ peer: null, conns: new Map(), hostConn: null }).current;
+  const net = useRef({ peer: null, conns: new Map(), hostConn: null, lastSeen: 0 }).current;
   const room = useRef({ players: [], settings: DEFAULT_SETTINGS, difficulty, phase: "menu" }).current;
   const handlerRef = useRef(null);
+  // Bumped whenever a host/join attempt starts or is torn down, so a slow attempt that finishes late can tell it is stale.
+  const attemptRef = useRef(0);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(NAME_STORAGE_KEY, name);
+    } catch {
+      // Storage can be unavailable (private mode); the name just isn't remembered.
+    }
+  }, [name]);
 
   const commit = useCallback((patch) => {
     Object.assign(room, patch);
@@ -452,10 +510,11 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
   }, [room]);
 
   const sendAll = useCallback((message) => {
-    for (const connection of net.conns.values()) if (connection.open) connection.send(message);
+    for (const connection of net.conns.values()) safeSend(connection, message);
   }, [net]);
 
   const teardown = useCallback(() => {
+    attemptRef.current += 1;
     net.conns.forEach((connection) => connection.close());
     net.conns.clear();
     net.hostConn?.close();
@@ -474,6 +533,8 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
       setMatch(null);
       setRole(null);
       setCode("");
+      setBusy(false);
+      setSignal("online");
       setError(message);
     },
     [commit, teardown],
@@ -492,11 +553,33 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
     [commit, net, room, sendAll],
   );
 
+  // Players that go silent (closed laptop, dropped wifi) never fire a clean close event, so ping both ways and time them out.
+  useEffect(() => {
+    if (!role) return undefined;
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      if (role === "host") {
+        for (const [id, connection] of [...net.conns]) {
+          safeSend(connection, { t: "ping" });
+          if (now - (connection.lastSeen || now) > SILENCE_TIMEOUT_MS) {
+            connection.close();
+            removePlayer(id);
+          }
+        }
+      } else if (net.hostConn) {
+        safeSend(net.hostConn, { t: "ping" });
+        if (net.lastSeen && now - net.lastSeen > SILENCE_TIMEOUT_MS) resetToMenu("Lost connection to the host.");
+      }
+    }, PING_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [net, removePlayer, resetToMenu, role]);
+
   const handleGuestConnection = useCallback(
     (connection) => {
+      connection.lastSeen = Date.now();
       const reject = (reason) => {
         const send = () => {
-          connection.send({ t: "rejected", reason });
+          safeSend(connection, { t: "rejected", reason });
           window.setTimeout(() => connection.close(), 300);
         };
         if (connection.open) send();
@@ -504,7 +587,9 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
       };
       connection.on("data", (message) => {
         if (!message || typeof message !== "object") return;
+        connection.lastSeen = Date.now();
         if (message.t === "hello") {
+          if (connection.playerId !== undefined) return;
           if (room.phase !== "lobby") return reject("That match has already started.");
           const used = new Set(room.players.map((player) => player.id));
           const id = [1, 2].find((candidate) => !used.has(candidate));
@@ -514,7 +599,7 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
           connection.playerId = id;
           net.conns.set(id, connection);
           commit({ players: [...room.players, { id, name: guestName }] });
-          connection.send({ t: "welcome", id, code: net.code });
+          safeSend(connection, { t: "welcome", id, code: net.code });
           sendAll({ t: "lobby", players: room.players, settings: room.settings, difficulty: room.difficulty });
         } else if (message.t === "input" && connection.playerId !== undefined) {
           handlerRef.current?.(connection.playerId, message);
@@ -527,10 +612,25 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
   );
 
   const hostRoom = async () => {
+    const attempt = attemptRef.current + 1;
+    attemptRef.current = attempt;
     setBusy(true);
     setError("");
+    setStatus("Contacting the matchmaking server…");
     try {
-      const { code: newCode, peer } = await openRoom({ onConnection: handleGuestConnection, onError: () => resetToMenu("The connection to the matchmaking server was lost.") });
+      const { code: newCode, peer } = await openRoom({
+        onConnection: handleGuestConnection,
+        onStatus: (state) => {
+          if (attemptRef.current === attempt) setSignal(state);
+        },
+        onError: () => {
+          if (attemptRef.current === attempt) resetToMenu("The connection to the matchmaking server was lost. Create a new room to keep playing.");
+        },
+      });
+      if (attemptRef.current !== attempt) {
+        peer.destroy();
+        return;
+      }
       net.peer = peer;
       net.code = newCode;
       setRole("host");
@@ -538,20 +638,35 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
       setMyId(0);
       commit({ players: [{ id: 0, name: cleanName(name) }], settings: DEFAULT_SETTINGS, difficulty, phase: "lobby" });
     } catch (failure) {
+      if (attemptRef.current !== attempt) return;
       setError(failure.message);
     }
     setBusy(false);
   };
 
-  const joinExistingRoom = async () => {
+  const joinExistingRoom = async (roomCode = joinCode) => {
+    const attempt = attemptRef.current + 1;
+    attemptRef.current = attempt;
     setBusy(true);
     setError("");
+    setStatus("Contacting the matchmaking server…");
     try {
-      const { peer, connection } = await joinRoom(joinCode);
+      const { peer, connection } = await joinRoom(roomCode, {
+        onStatus: (message) => {
+          if (attemptRef.current === attempt) setStatus(message);
+        },
+      });
+      if (attemptRef.current !== attempt) {
+        connection.close();
+        peer.destroy();
+        return;
+      }
       net.peer = peer;
       net.hostConn = connection;
+      net.lastSeen = Date.now();
       connection.on("data", (message) => {
         if (!message || typeof message !== "object") return;
+        net.lastSeen = Date.now();
         if (message.t === "welcome") {
           setMyId(message.id);
           setCode(message.code);
@@ -572,13 +687,25 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
           handlerRef.current?.(0, message);
         }
       });
-      connection.on("close", () => resetToMenu("The host closed the room."));
-      connection.send({ t: "hello", name: cleanName(name) });
+      connection.on("close", () => {
+        if (attemptRef.current === attempt) resetToMenu("The host closed the room.");
+      });
+      connection.on("error", () => {
+        if (attemptRef.current === attempt) resetToMenu("The connection to the host was lost.");
+      });
+      safeSend(connection, { t: "hello", name: cleanName(name) });
     } catch (failure) {
+      if (attemptRef.current !== attempt) return;
       setError(failure.message);
     }
     setBusy(false);
   };
+
+  // Opening an invite link joins straight away, with no code to type.
+  useEffect(() => {
+    if (invite?.code) joinExistingRoom(invite.code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invite?.code, invite?.nonce]);
 
   const changeSettings = (patch) => {
     const next = { ...room.settings, ...patch };
@@ -591,7 +718,7 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
     world.countdown = 3;
     const fighters = describeFighters(world);
     for (const [id, connection] of net.conns) {
-      if (connection.open) connection.send({ t: "start", me: id, stage: room.settings.stage, level: room.settings.round, teamMode: room.settings.teamMode, fighters });
+      safeSend(connection, { t: "start", me: id, stage: room.settings.stage, level: room.settings.round, teamMode: room.settings.teamMode, fighters });
     }
     setMatch({ scene: world, key: Date.now() });
     commit({ phase: "playing" });
@@ -605,10 +732,10 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit }) {
   };
 
   if (phase === "menu") {
-    return <OnlineMenu name={name} setName={setName} joinCode={joinCode} setJoinCode={setJoinCode} busy={busy} error={error} onHost={hostRoom} onJoin={joinExistingRoom} onBack={onExit} />;
+    return <OnlineMenu name={name} setName={setName} joinCode={joinCode} setJoinCode={setJoinCode} busy={busy} status={status} inviteCode={invite?.code} error={error} onHost={hostRoom} onJoin={() => joinExistingRoom()} onBack={onExit} />;
   }
   if (phase === "lobby") {
-    return <Lobby role={role} code={code} players={players} settings={settings} difficulty={roomDifficulty} myId={myId} onChange={changeSettings} onStart={startMatch} onLeave={() => resetToMenu("")} />;
+    return <Lobby role={role} code={code} players={players} settings={settings} difficulty={roomDifficulty} myId={myId} signal={signal} onChange={changeSettings} onStart={startMatch} onLeave={() => resetToMenu("")} />;
   }
   return match ? (
     <OnlineMatch key={match.key} ui={ui} role={role} scene={match.scene} myId={myId} code={code} net={net} handlerRef={handlerRef} onRematch={startMatch} onLobby={backToLobby} onLeave={() => resetToMenu("")} />

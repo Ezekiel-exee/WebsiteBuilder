@@ -1,6 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Icon from "../builder/Icon";
 import ByteBrawl from "./ByteBrawlGame";
+import { readInviteCode } from "./byteBrawlNet";
 import BombermanGame from "./games/BombermanGame";
 import MinesweeperGame from "./games/MinesweeperGame";
 import PacmanGame from "./games/PacmanGame";
@@ -58,11 +59,31 @@ function GameCard({ game, onPlay }) {
 }
 
 export default function ArcadePage({ onBack }) {
-  const [selectedGame, setSelectedGame] = useState("");
+  const [initialInvite] = useState(() => readInviteCode());
+  const [selectedGame, setSelectedGame] = useState(initialInvite ? "code-arena" : "");
   const [difficulty, setDifficulty] = useState("easy");
   const [level, setLevel] = useState(1);
-  const [brawlSetup, setBrawlSetup] = useState(null);
+  const [brawlSetup, setBrawlSetup] = useState(() => (initialInvite ? { mode: "online", invite: { code: initialInvite, nonce: 0 } } : null));
   const chosenGame = GAMES.find((game) => game.id === selectedGame);
+
+  // An invite link (#/arcade/join/CODE) drops the player straight into that room, whether the page was just
+  // loaded or the link is opened while the arcade is already showing. The hash is then reset so a refresh
+  // doesn't try to re-join a stale room.
+  useEffect(() => {
+    const consumeInvite = () => {
+      const code = readInviteCode();
+      if (!code) return;
+      window.history.replaceState(null, "", "#/arcade");
+      setSelectedGame("code-arena");
+      setBrawlSetup((current) => ({ mode: "online", invite: { code, nonce: (current?.invite?.nonce ?? 0) + 1 } }));
+      setLevel(1);
+    };
+    // The initial link was already read into state above; only clean the URL.
+    if (readInviteCode()) window.history.replaceState(null, "", "#/arcade");
+    window.addEventListener("hashchange", consumeInvite);
+    return () => window.removeEventListener("hashchange", consumeInvite);
+  }, []);
+
   const returnToGames = useCallback(() => {
     setSelectedGame("");
     setBrawlSetup(null);
@@ -79,7 +100,7 @@ export default function ArcadePage({ onBack }) {
   }, []);
   const gameProps = { difficulty, level, onBack: returnToGames, onLevelAdvance, setup: brawlSetup, onSetup: startBrawl, onMenu: brawlMenu };
   const Game = GAME_COMPONENTS[selectedGame];
-  const gameKey = `${selectedGame}-${difficulty}-${level}`;
+  const gameKey = `${selectedGame}-${difficulty}-${level}-${brawlSetup?.invite?.nonce ?? 0}`;
 
   return (
     <main className="mx-auto max-w-[1280px] px-4 py-8 sm:px-8">
