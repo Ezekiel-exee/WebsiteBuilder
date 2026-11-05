@@ -35,11 +35,19 @@ export function isOnlineConfigured() {
   return Boolean(clientFactory || (SUPABASE_URL && SUPABASE_KEY));
 }
 
+// Older Safari/iOS throws "The string did not match the expected pattern" for https:// URLs in the WebSocket
+// constructor (newer Chrome/Firefox accept them), so the endpoint must be wss://.
+export function realtimeEndpoint(baseUrl) {
+  const url = new URL("realtime/v1", `${baseUrl.trim().replace(/\/+$/, "")}/`);
+  url.protocol = url.protocol.replace(/^http/, "ws");
+  return url.toString();
+}
+
 function createClient() {
   if (clientFactory) return clientFactory();
   if (!isOnlineConfigured()) throw new Error(NOT_CONFIGURED_MESSAGE);
-  return new RealtimeClient(`${SUPABASE_URL.replace(/\/+$/, "")}/realtime/v1`, {
-    params: { apikey: SUPABASE_KEY, eventsPerSecond: 60 },
+  return new RealtimeClient(realtimeEndpoint(SUPABASE_URL), {
+    params: { apikey: SUPABASE_KEY.trim(), eventsPerSecond: 60 },
   });
 }
 
@@ -168,29 +176,36 @@ function joinChannel(client, code, presenceKey, { onBroadcast, onLeave, onStatus
     channel.on("presence", { event: "sync" }, () => resolveSynced());
     channel.on("presence", { event: "leave" }, ({ key }) => onLeave?.(key));
 
-    channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        window.clearTimeout(timer);
-        if (everSubscribed) {
-          // Presence is dropped when the socket reconnects, so announce ourselves again.
-          channel.track({ role: presenceKey === HOST ? HOST : "guest" });
-          onStatus?.("online");
-        }
-        everSubscribed = true;
-        if (!settled) {
-          settled = true;
-          resolve({ channel, synced });
-        }
-      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-        if (!settled) {
-          settled = true;
+    try {
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
           window.clearTimeout(timer);
-          reject(new Error(SERVER_MESSAGE));
-        } else {
-          onStatus?.("reconnecting");
+          if (everSubscribed) {
+            // Presence is dropped when the socket reconnects, so announce ourselves again.
+            channel.track({ role: presenceKey === HOST ? HOST : "guest" });
+            onStatus?.("online");
+          }
+          everSubscribed = true;
+          if (!settled) {
+            settled = true;
+            resolve({ channel, synced });
+          }
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          if (!settled) {
+            settled = true;
+            window.clearTimeout(timer);
+            reject(new Error(SERVER_MESSAGE));
+          } else {
+            onStatus?.("reconnecting");
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      // Some browsers refuse to open the socket at all; keep their message so the cause is visible.
+      settled = true;
+      window.clearTimeout(timer);
+      reject(new Error(`${SERVER_MESSAGE} (${error.message})`));
+    }
   });
 }
 
