@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
-import { TouchDock } from "./TouchControls";
+import { TouchDock, useTouchControls } from "./TouchControls";
 
 // `touch` describes the on-screen gamepad shown on touch devices: { dpad, buttons, onPause, extra }.
 export function GameFrame({ title, description, status, metrics, onBack, backLabel = "< games", onRestart, canRestart = true, onKeyDown, onKeyUp, controls, touch, children }) {
   const frameRef = useRef(null);
   const restartRef = useRef(null);
+  const touchControls = useTouchControls();
+  const showTouch = Boolean(touch) && touchControls.show;
   const statusLabel = { ready: "READY", running: "RUNNING", won: "COMPLETED", lost: "GAME OVER" }[status] || status.toUpperCase();
   const statusColor = status === "running" ? "text-emerald-300" : status === "won" ? "text-cyan-300" : status === "lost" ? "text-rose-300" : status === "paused" ? "text-amber-300" : "text-zinc-400";
   useEffect(() => frameRef.current?.focus(), [title]);
@@ -14,11 +16,11 @@ export function GameFrame({ title, description, status, metrics, onBack, backLab
   useEffect(() => {
     const starting = (previousStatus.current === "ready" || previousStatus.current === null) && status === "running";
     previousStatus.current = status;
-    if (!starting || !touch || !window.matchMedia("(max-width: 639px), (pointer: coarse)").matches) return;
+    if (!starting || !showTouch) return;
     const canvas = playRef.current?.querySelector("canvas");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     canvas?.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
-  }, [status, touch]);
+  }, [status, showTouch]);
   useEffect(() => {
     if (status === "lost") restartRef.current?.focus();
   }, [status]);
@@ -109,13 +111,30 @@ export function GameFrame({ title, description, status, metrics, onBack, backLab
         <aside className="rounded-xl border border-white/10 bg-[#0b0d12] p-4">
           <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Controls</p>
           <p className="font-mono text-xs leading-6 text-zinc-400">{controls}</p>
+          {touch && (
+            <div role="radiogroup" aria-label="On-screen touch controls" className="mt-3 flex items-center gap-2 font-mono text-[11px] text-zinc-500">
+              <span>Touch pad</span>
+              {["auto", "on", "off"].map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={touchControls.mode === option}
+                  onClick={() => touchControls.setMode(option)}
+                  className={`rounded border px-2 py-1 uppercase ${touchControls.mode === option ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100" : "border-white/10 text-zinc-400"}`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="mt-4 border-t border-white/10 pt-3 font-mono text-[11px] leading-5 text-zinc-600">
             <p><span className="text-cyan-400">const</span> mode = "local";</p>
             <p><span className="text-cyan-400">const</span> fun = true;</p>
           </div>
         </aside>
       </div>
-      {touch && <TouchDock {...touch} />}
+      {showTouch && <TouchDock {...touch} />}
     </div>
   );
 }

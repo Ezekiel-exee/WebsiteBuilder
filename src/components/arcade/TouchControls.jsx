@@ -1,9 +1,44 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export const DIR_VECTORS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 const NO_DIRECTIONS = new Set();
 const SURFACE = "border border-white/15 bg-zinc-900/70 backdrop-blur-sm shadow-lg shadow-black/40";
+const MODE_KEY = "arcade-touch-controls";
+// Phones (even in "desktop site" mode) and tablets, but not laptops that merely have a touchscreen next to a mouse.
+const TOUCH_QUERY = "(max-width: 639px), (pointer: coarse), ((any-pointer: coarse) and (any-hover: none))";
+
+function readMode() {
+  try {
+    const stored = window.localStorage.getItem(MODE_KEY);
+    return stored === "on" || stored === "off" ? stored : "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+// Decides whether the on-screen gamepad is shown. "auto" follows the device; players can force it on or off.
+export function useTouchControls() {
+  const [detected, setDetected] = useState(() => window.matchMedia(TOUCH_QUERY).matches || navigator.maxTouchPoints > 0 && !window.matchMedia("(any-pointer: fine)").matches);
+  const [mode, setModeState] = useState(readMode);
+  useEffect(() => {
+    const media = window.matchMedia(TOUCH_QUERY);
+    const update = () => setDetected(media.matches || (navigator.maxTouchPoints > 0 && !window.matchMedia("(any-pointer: fine)").matches));
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  const setMode = (next) => {
+    setModeState(next);
+    try {
+      window.localStorage.setItem(MODE_KEY, next);
+    } catch {
+      // The choice just isn't remembered.
+    }
+  };
+  return { show: mode === "on" || (mode === "auto" && detected), mode, setMode };
+}
 
 function buzz(ms = 8) {
   try {
@@ -148,14 +183,11 @@ export function PadButton({ label, hint, onPress, onRelease, tone = "cyan", clas
 
 const BRAWL_KEYS = { left: "a", right: "d", down: "s", up: "w" };
 
-// Shared gamepad layout for Byte Brawl (solo and online): D-pad moves/jumps/drops, FIRE is easiest to reach, JUMP above it.
+// Shared gamepad layout for Byte Brawl (solo and online): the D-pad moves, drops (down) and jumps (up); one big FIRE button.
 export function brawlTouch(holdKey, releaseKey, onPause) {
   return {
     dpad: { diagonals: true, onPress: (direction) => holdKey(BRAWL_KEYS[direction]), onRelease: (direction) => releaseKey(BRAWL_KEYS[direction]) },
-    buttons: [
-      { id: "fire", label: "FIRE", tone: "rose", onPress: () => holdKey("j"), onRelease: () => releaseKey("j") },
-      { id: "jump", label: "JUMP", tone: "cyan", onPress: () => holdKey("w"), onRelease: () => releaseKey("w") },
-    ],
+    buttons: [{ id: "fire", label: "FIRE", tone: "rose", onPress: () => holdKey("j"), onRelease: () => releaseKey("j") }],
     onPause,
   };
 }
@@ -167,31 +199,34 @@ const SLOTS = ["bottom-0 right-0", "bottom-[calc(var(--pad)*0.32)] right-[calc(v
 export function TouchDock({ dpad, buttons = [], onPause, extra }) {
   return (
     <>
-      <div aria-hidden="true" className="hidden h-60 max-sm:block pointer-coarse:block" />
-      <div
-        role="group"
-        aria-label="Touch controls"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 hidden items-end justify-between gap-3 bg-gradient-to-t from-black/60 to-transparent px-3 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))] [--pad:clamp(8rem,40vw,10.5rem)] max-sm:flex pointer-coarse:flex"
-      >
-        {dpad ? <DPad {...dpad} /> : <div className="min-w-0 flex-1">{extra}</div>}
-        {onPause && (
-          <button
-            type="button"
-            onClick={onPause}
-            aria-label="Pause or resume"
-            className={`pointer-events-auto absolute left-1/2 top-2 -translate-x-1/2 touch-manipulation rounded-full px-4 py-1.5 font-mono text-[11px] font-semibold tracking-widest text-zinc-200 ${SURFACE}`}
-          >
-            II PAUSE
-          </button>
-        )}
-        {buttons.length > 0 && (
-          <div className="relative h-[var(--pad)] w-[var(--pad)] shrink-0">
-            {buttons.map((button, index) => (
-              <PadButton key={button.id} {...button} className={`absolute ${SLOTS[index] ?? SLOTS[0]}`} />
-            ))}
-          </div>
-        )}
-      </div>
+      <div aria-hidden="true" className="h-60" />
+      {createPortal(
+        <div
+          role="group"
+          aria-label="Touch controls"
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-end justify-between gap-3 bg-gradient-to-t from-black/60 to-transparent px-3 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))] [--pad:clamp(8rem,40vw,10.5rem)]"
+        >
+          {dpad ? <DPad {...dpad} /> : <div className="min-w-0 flex-1">{extra}</div>}
+          {onPause && (
+            <button
+              type="button"
+              onClick={onPause}
+              aria-label="Pause or resume"
+              className={`pointer-events-auto absolute left-1/2 top-2 -translate-x-1/2 touch-manipulation rounded-full px-4 py-1.5 font-mono text-[11px] font-semibold tracking-widest text-zinc-200 ${SURFACE}`}
+            >
+              II PAUSE
+            </button>
+          )}
+          {buttons.length > 0 && (
+            <div className="relative h-[var(--pad)] w-[var(--pad)] shrink-0">
+              {buttons.map((button, index) => (
+                <PadButton key={button.id} {...button} className={`absolute ${SLOTS[index] ?? SLOTS[0]}`} />
+              ))}
+            </div>
+          )}
+        </div>,
+        document.body,
+      )}
     </>
   );
 }

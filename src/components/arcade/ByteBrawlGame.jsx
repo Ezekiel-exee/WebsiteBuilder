@@ -122,7 +122,7 @@ function ByteBrawlMatch({ setup, difficulty, level, onMenu, onLevelAdvance }) {
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
       touch={brawlTouch(holdKey, releaseKey, () => setStatus((current) => (current === "running" ? "paused" : current === "paused" ? "running" : current)))}
-      controls="A/D or ←/→ move. W, ↑, or Space jumps (twice in the air). S or ↓ drops through a platform. Hold J, K, Z, or Enter to fire. P pauses. Hits add damage, and more damage means more knockback — lose a stock when you leave the screen. Pick up gun crates (square) and power-ups (diamond). On touch, use the on-screen D-pad and FIRE / JUMP buttons."
+      controls="A/D or ←/→ move. W, ↑, or Space jumps (twice in the air). S or ↓ drops through a platform. Hold J, K, Z, or Enter to fire. P pauses. Hits add damage, and more damage means more knockback — lose a stock when you leave the screen. Pick up gun crates (square) and power-ups (diamond). On touch, use the on-screen D-pad (up jumps, down drops) and the FIRE button."
     >
       <div className="mx-auto max-w-[800px]">
         <canvas
