@@ -1,4 +1,4 @@
-import { memo, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CodeView from "./CodeView";
 import CopyButton from "./CopyButton";
 import LoadingSkeleton from "./LoadingSkeleton";
@@ -21,7 +21,7 @@ function ShowcaseCard({ id, item, customization, elementOverrides, selectedTarge
   const Component = item.Component;
   const width = DEVICES.find((d) => d.id === device).width;
   const activeSettings = { ...customization, ...(elementOverrides[selectedTarget] || {}) };
-  const exportSettings = { ...customization, elementOverrides };
+  const exportSettings = useMemo(() => ({ ...customization, elementOverrides }), [customization, elementOverrides]);
 
   const handleFrameContentNode = useCallback((mountNode) => {
     const updateTargets = () => {
@@ -85,7 +85,10 @@ function ShowcaseCard({ id, item, customization, elementOverrides, selectedTarge
     [code, loadCode],
   );
 
-  const customizedCode = code === null ? null : customizeSource(code, exportSettings);
+  const customizedCode = useMemo(
+    () => (code === null ? null : customizeSource(code, exportSettings)),
+    [code, exportSettings],
+  );
   const activeCode = editedCode ?? customizedCode;
   const lines = activeCode === null ? null : activeCode.split("\n").length;
   const getCustomizedCode = useCallback(async () =>
@@ -100,14 +103,14 @@ function ShowcaseCard({ id, item, customization, elementOverrides, selectedTarge
     <article
       ref={cardRef}
       id={id}
-      className={`scroll-mt-24 overflow-hidden rounded-2xl border bg-zinc-900/60 shadow-2xl shadow-black/40 ${isStudioSelected ? "border-cyan-400/40 ring-1 ring-cyan-400/20" : "border-white/10"}`}
+      className={`ui-focus scroll-mt-24 overflow-hidden rounded-2xl border bg-zinc-900/60 shadow-2xl shadow-black/40 ${isStudioSelected ? "border-cyan-400/40 ring-1 ring-cyan-400/20" : "border-white/10"}`}
     >
       <header className="flex flex-col gap-4 border-b border-white/10 bg-zinc-900/80 px-5 py-4 backdrop-blur xl:flex-row xl:items-center xl:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-semibold text-white">{item.name}</h3>
             {isStudioSelected && (
-              <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-cyan-200">
+              <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-200">
                 Editing
               </span>
             )}
@@ -137,7 +140,7 @@ function ShowcaseCard({ id, item, customization, elementOverrides, selectedTarge
                 title="Replay animations"
                 aria-label="Replay animations"
                 onClick={() => setReloadKey((key) => key + 1)}
-                className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-zinc-900 text-zinc-400 transition hover:text-white"
+                className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-zinc-900 text-zinc-400 transition hover:border-white/20 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400"
               >
                 <Icon name="rotate" />
               </button>
@@ -200,10 +203,10 @@ function ShowcaseCard({ id, item, customization, elementOverrides, selectedTarge
         <CodeView code={activeCode} onChange={setEditedCode} />
       ) : null}
 
-      <footer className="flex items-center justify-between border-t border-white/5 px-5 py-2.5 text-xs text-zinc-500">
+      <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-white/5 px-5 py-2.5 text-xs text-zinc-400">
         <span className="font-mono">{item.exportName}.jsx</span>
         <span>
-          Scroll inside preview ·{" "}
+          <span className="hidden sm:inline">Scroll inside preview · </span>
           {lines === null ? "Source loads on demand · " : `${lines} lines · `}
           React + Tailwind · zero dependencies
         </span>

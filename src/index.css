@@ -54,6 +54,58 @@
   background: transparent;
 }
 
+/* Shell-only chrome. Scoped to .builder-shell / .ui-focus so it never leaks into iframe previews or the arcade. */
+.builder-shell {
+  color-scheme: dark;
+}
+.ui-focus :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 200;
+  transform: translateY(-200%);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #09090b;
+  transition: transform 150ms ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+.studio-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.studio-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.studio-collapse > div {
+  min-height: 0;
+  overflow: hidden;
+}
+@media (min-width: 1024px) {
+  .studio-collapse {
+    display: block;
+  }
+  .studio-collapse > div {
+    overflow: visible;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-collapse,
+  .skip-link {
+    transition-duration: 0.01ms;
+  }
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;
@@ -66,6 +118,11 @@
 }
 .toast-in {
   animation: toast-in 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-in {
+    animation-duration: 0.01ms;
+  }
 }
 
 .studio-surface {

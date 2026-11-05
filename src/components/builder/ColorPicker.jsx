@@ -172,7 +172,7 @@ export default function ColorPicker({ label, value, kind, onChange, disabled = f
           <legend className="mb-1.5 text-[10px] text-zinc-400">RGB</legend>
           <div className="grid grid-cols-3 gap-2">
             {["R", "G", "B"].map((channel, index) => (
-              <label key={channel} className="grid gap-1 text-[9px] text-zinc-500">
+              <label key={channel} className="grid gap-1               text-[10px] text-zinc-400">
                 {channel}
                 <input
                   aria-label={`${label} RGB ${channel}`}

@@ -67,14 +67,14 @@ function CornerRadiusControl({ label, radiusKey, value, onChange, disabled = fal
           aria-label={`${radius.linked ? "Unlink" : "Link"} ${label} corners`}
           aria-pressed={Boolean(radius.linked)}
           onClick={toggleLinked}
-          className="rounded px-1.5 py-0.5 text-[9px] font-medium text-cyan-300 transition hover:bg-cyan-400/10 disabled:cursor-not-allowed"
+          className="rounded px-1.5 py-1 text-[11px] font-medium text-cyan-300 transition hover:bg-cyan-400/10 disabled:cursor-not-allowed"
         >
           {radius.linked ? "Linked" : "Link corners"}
         </button>
       </div>
       <div className="grid grid-cols-4 gap-1">
         {RADIUS_CORNERS.map(([key, shortLabel]) => (
-          <label key={key} className="grid min-w-0 gap-0.5 text-center text-[8px] uppercase text-zinc-600">
+          <label key={key} className="grid min-w-0 gap-0.5 text-center text-[10px] uppercase text-zinc-500">
             {shortLabel}
             <input
               aria-label={`${label} ${key.replace(/([A-Z])/g, " $1").toLowerCase()} radius in pixels`}
@@ -126,12 +126,12 @@ function LineThicknessControl({ value, onChange, disabled = false }) {
           type="button"
           disabled={isOriginal}
           onClick={() => onChange((current) => ({ ...current, borderWidth: null }))}
-          className="rounded border border-white/10 px-2 py-1 text-[9px] text-zinc-400 transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded border border-white/10 px-2 py-1 text-[11px] text-zinc-400 transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           Original
         </button>
       </div>
-      <p className="text-[9px] text-zinc-600">Auto keeps the component&apos;s authored border widths.</p>
+      <p className="text-[10px] text-zinc-500">Auto keeps the component&apos;s authored border widths.</p>
     </fieldset>
   );
 }
@@ -163,12 +163,12 @@ export default function CustomizerPanel({ settings, onChange, componentOptions, 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h4 className="text-sm font-semibold text-white">Studio controls</h4>
-          <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">Changes apply only to the selected component and its code export.</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-zinc-400">Changes apply only to the selected component and its code export.</p>
         </div>
         <button
           type="button"
           onClick={onReset}
-          className="rounded-md border border-white/10 px-2.5 py-1 text-[11px] font-medium text-zinc-400 transition hover:border-white/20 hover:text-white"
+          className="rounded-md border border-white/10 px-2.5 py-1.5 text-[11px] font-medium text-zinc-400 transition hover:border-white/20 hover:text-white"
         >
           Reset component
         </button>
@@ -189,7 +189,7 @@ export default function CustomizerPanel({ settings, onChange, componentOptions, 
 
       <fieldset className="mt-4 border-t border-white/10 pt-3">
         <legend className="px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Color themes</legend>
-        <p className="mb-2 text-[10px] text-zinc-600">Choose a shared palette or customize individual colors.</p>
+        <p className="mb-2 text-[11px] text-zinc-500">Choose a shared palette or customize individual colors.</p>
         <div className="grid grid-cols-2 gap-2">
           {palettes.map(([id, theme]) => {
             const selected = settings.theme === id;
@@ -256,7 +256,7 @@ export default function CustomizerPanel({ settings, onChange, componentOptions, 
           <ColorPicker label="Borders / dividers" kind="border" value={settings.border} onChange={(value) => update("border", value, true)} disabled={!supported.has("border")} />
         </div>
       </div>
-      <p className="mt-3 text-[10px] leading-relaxed text-zinc-600">Element-specific edits stay scoped to this component. Unsupported controls stay disabled.</p>
+      <p className="mt-3 text-[11px] leading-relaxed text-zinc-500">Element-specific edits stay scoped to this component. Unsupported controls stay disabled.</p>
     </section>
   );
 }

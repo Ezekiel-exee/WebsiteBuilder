@@ -936,7 +936,7 @@ export default function CodeView({ code, onChange, maxHeight = "38rem" }) {
           >
             {formatting ? "Formatting…" : "Format"}
           </button>
-          <span className="ml-auto text-[10px] text-zinc-600">Select a value for replacements · Ctrl/⌘+Space for suggestions</span>
+          <span className="ml-auto text-[10px] text-zinc-400">Select a value for replacements · Ctrl/⌘+Space for suggestions</span>
           {formatError && (
             <p role="alert" className="w-full text-xs text-rose-300">
               {formatError}
