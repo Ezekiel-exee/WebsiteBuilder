@@ -1,45 +1,47 @@
-import Peer from "peerjs";
+import { RealtimeClient } from "@supabase/realtime-js";
 
-const ROOM_PREFIX = "blocksmith-bytebrawl-";
+// Online play runs over Supabase Realtime. Every player joins one Broadcast channel per room; the host's browser
+// still runs the match, and Presence tells everyone when a player or the host leaves. Links expose the small
+// connection-like surface (`send`, `close`, `on("data" | "close")`, `open`) the lobby and match code use.
+
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const EVENT = "m";
+const HOST = "host";
+const EVERYONE = "*";
 
 export const MAX_PLAYERS = 3;
 export const CODE_LENGTH = 5;
 
-// PeerJS replaces its built-in ICE list when `config` is passed, so its TURN relays are repeated here.
-// Relays on port 443 let players on strict corporate/school networks connect, which STUN alone cannot do.
-// Set VITE_ICE_SERVERS (a JSON array of RTCIceServer objects) to use your own TURN service instead.
-const DEFAULT_ICE_SERVERS = [
-  { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:global.stun.twilio.com:3478", "stun:stun.cloudflare.com:3478"] },
-  { urls: ["turn:eu-0.turn.peerjs.com:3478", "turn:us-0.turn.peerjs.com:3478"], username: "peerjs", credential: "peerjsp" },
-  {
-    urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp", "turns:openrelay.metered.ca:443?transport=tcp"],
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-];
+const SUBSCRIBE_TIMEOUT_MS = 12000;
+const PRESENCE_WAIT_MS = 6000;
+const RECONNECT_GIVE_UP_MS = 45000;
+const MAX_BUFFERED_BYTES = 64 * 1024;
 
-function readIceServers() {
-  try {
-    const custom = import.meta.env?.VITE_ICE_SERVERS;
-    const parsed = custom ? JSON.parse(custom) : null;
-    if (Array.isArray(parsed) && parsed.length) return parsed;
-  } catch {
-    // A malformed override falls back to the defaults.
-  }
-  return DEFAULT_ICE_SERVERS;
+const NOT_CONFIGURED_MESSAGE = "Online play isn't set up on this site yet (missing Supabase settings).";
+const SERVER_MESSAGE = "Could not reach the online server. Check your internet connection — a VPN, firewall or school/work network may be blocking it.";
+const NO_ROOM_MESSAGE = "No room found with that code. Check the link or code, and make sure the host is still on the room screen.";
+
+const env = import.meta.env || {};
+const SUPABASE_URL = env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = env.VITE_SUPABASE_ANON_KEY;
+
+// Tests inject a fake Realtime client; production always uses the real one.
+let clientFactory = null;
+export function setRealtimeClientFactory(factory) {
+  clientFactory = factory;
 }
 
-const PEER_OPTIONS = { debug: 0, config: { iceServers: readIceServers(), iceCandidatePoolSize: 4 } };
+export function isOnlineConfigured() {
+  return Boolean(clientFactory || (SUPABASE_URL && SUPABASE_KEY));
+}
 
-const SERVER_TIMEOUT_MS = 12000;
-const CONNECT_TIMEOUT_MS = 18000;
-const JOIN_ATTEMPTS = 3;
-const MAX_RECONNECTS = 8;
-const MAX_BUFFERED_BYTES = 128 * 1024;
-
-const SIGNALING_MESSAGE = "Could not reach the matchmaking server. Check your internet connection — a VPN, firewall or school/work network may be blocking it.";
-const DIRECT_LINK_MESSAGE = "Found the room, but could not open a direct connection. One of your networks is blocking peer-to-peer traffic — turn off any VPN or try another network (a phone hotspot works well), then ask the host for a fresh link.";
+function createClient() {
+  if (clientFactory) return clientFactory();
+  if (!isOnlineConfigured()) throw new Error(NOT_CONFIGURED_MESSAGE);
+  return new RealtimeClient(`${SUPABASE_URL.replace(/\/+$/, "")}/realtime/v1`, {
+    params: { apikey: SUPABASE_KEY, eventsPerSecond: 60 },
+  });
+}
 
 function randomCode(length) {
   const bytes = crypto.getRandomValues(new Uint8Array(length));
@@ -67,7 +69,7 @@ export function readInviteCode() {
   return code.length === CODE_LENGTH ? code : "";
 }
 
-// Sending on a channel that is closing throws; callers treat a false result as "peer is gone".
+// Sending on a closed link throws; callers treat a false result as "peer is gone".
 export function safeSend(connection, message) {
   if (!connection?.open) return false;
   try {
@@ -78,154 +80,255 @@ export function safeSend(connection, message) {
   }
 }
 
-// Snapshots are superseded by the next one, so skipping them while the channel is backed up keeps latency
+// Snapshots are superseded by the next one, so skipping them while the socket is backed up keeps latency
 // from growing on slow links.
 export function sendLatest(connection, message) {
-  if ((connection?.dataChannel?.bufferedAmount ?? 0) > MAX_BUFFERED_BYTES) return false;
+  if (connection?.congested?.()) return false;
   return safeSend(connection, message);
 }
 
-export function openRoom({ onConnection, onError, onStatus }) {
+// Sends one message to every open link. The host's links share a channel, so a single broadcast reaches all
+// guests and counts once against the Realtime quota instead of once per guest.
+export function broadcast(connections, message, { droppable = false } = {}) {
+  const open = [...connections].filter((connection) => connection.open);
+  if (!open.length) return;
+  const shared = open.find((connection) => connection.sendToAll);
+  if (shared) {
+    if (droppable && shared.congested?.()) return;
+    try {
+      shared.sendToAll(message);
+    } catch {
+      // The channel is closing; links report it through their close events.
+    }
+    return;
+  }
+  for (const connection of open) (droppable ? sendLatest : safeSend)(connection, message);
+}
+
+// One peer's side of the conversation, shaped like the connection objects the game code expects.
+class Link {
+  constructor({ transmit, congested, sendToAll }) {
+    this.open = true;
+    this.transmit = transmit;
+    this.congested = congested;
+    this.sendToAll = sendToAll;
+    this.handlers = { data: [], close: [] };
+  }
+
+  on(event, handler) {
+    this.handlers[event]?.push(handler);
+    return this;
+  }
+
+  emit(event, value) {
+    for (const handler of [...(this.handlers[event] || [])]) handler(value);
+  }
+
+  send(message) {
+    if (!this.open) throw new Error("Connection closed");
+    this.transmit({ d: message });
+  }
+
+  // `notify` tells the other side; it is skipped when the other side is the one that left.
+  close(notify = true) {
+    if (!this.open) return;
+    this.open = false;
+    if (notify) {
+      try {
+        this.transmit({ k: "bye" });
+      } catch {
+        // The channel may already be gone.
+      }
+    }
+    this.emit("close");
+  }
+}
+
+// Joins the room's channel. Resolves once subscribed; `onStatus` reports later connection drops and recoveries.
+function joinChannel(client, code, presenceKey, { onBroadcast, onLeave, onStatus }) {
   return new Promise((resolve, reject) => {
-    let attempts = 0;
-    const attempt = () => {
-      const code = randomCode(CODE_LENGTH);
-      const peer = new Peer(ROOM_PREFIX + code, PEER_OPTIONS);
-      let opened = false;
-      let reconnects = 0;
-      let reconnectTimer = 0;
-      const timeout = window.setTimeout(() => {
-        peer.destroy();
-        reject(new Error(SIGNALING_MESSAGE));
-      }, SERVER_TIMEOUT_MS);
+    const channel = client.channel(`bytebrawl:${code}`, {
+      config: { broadcast: { self: false, ack: false }, presence: { key: presenceKey, enabled: true } },
+    });
+    let resolveSynced;
+    const synced = new Promise((done) => {
+      resolveSynced = done;
+    });
+    let settled = false;
+    let everSubscribed = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(SERVER_MESSAGE));
+    }, SUBSCRIBE_TIMEOUT_MS);
 
-      peer.on("open", () => {
-        reconnects = 0;
-        onStatus?.("online");
-        if (opened) return;
-        opened = true;
-        window.clearTimeout(timeout);
-        resolve({ code, peer });
-      });
-      peer.on("connection", onConnection);
+    channel.on("broadcast", { event: EVENT }, ({ payload }) => {
+      if (payload && typeof payload === "object") onBroadcast(payload);
+    });
+    channel.on("presence", { event: "sync" }, () => resolveSynced());
+    channel.on("presence", { event: "leave" }, ({ key }) => onLeave?.(key));
 
-      // The signaling socket can drop (sleep, wifi change). Players already in the room keep playing because
-      // gameplay is peer-to-peer, so re-register the room quietly instead of kicking everybody out.
-      peer.on("disconnected", () => {
-        if (!opened || peer.destroyed) return;
-        const retry = () => {
-          if (peer.destroyed || !peer.disconnected) return;
-          if (reconnects >= MAX_RECONNECTS) {
-            onError?.(new Error("lost-signaling"));
-            return;
-          }
-          reconnects += 1;
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        window.clearTimeout(timer);
+        if (everSubscribed) {
+          // Presence is dropped when the socket reconnects, so announce ourselves again.
+          channel.track({ role: presenceKey === HOST ? HOST : "guest" });
+          onStatus?.("online");
+        }
+        everSubscribed = true;
+        if (!settled) {
+          settled = true;
+          resolve({ channel, synced });
+        }
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        if (!settled) {
+          settled = true;
+          window.clearTimeout(timer);
+          reject(new Error(SERVER_MESSAGE));
+        } else {
           onStatus?.("reconnecting");
-          try {
-            peer.reconnect();
-          } catch {
-            return;
-          }
-          reconnectTimer = window.setTimeout(retry, 4000);
-        };
-        window.clearTimeout(reconnectTimer);
-        reconnectTimer = window.setTimeout(retry, 1000);
-      });
-      peer.on("close", () => window.clearTimeout(reconnectTimer));
-
-      peer.on("error", (error) => {
-        // After the room is open, one guest failing to negotiate must never tear the room down.
-        if (opened) {
-          if (["browser-incompatible", "invalid-id", "invalid-key", "ssl-unavailable"].includes(error.type)) onError?.(error);
-          return;
         }
-        window.clearTimeout(timeout);
-        peer.destroy();
-        if (error.type === "unavailable-id") {
-          if (attempts < 5) {
-            attempts += 1;
-            attempt();
-          } else {
-            reject(new Error("Could not create a room. Please try again."));
-          }
-          return;
-        }
-        reject(new Error(SIGNALING_MESSAGE));
-      });
-    };
-    attempt();
+      }
+    });
   });
 }
 
-function connectOnce(peer, hostId, { onStatus, attempt }) {
-  return new Promise((resolve, reject) => {
-    onStatus?.(attempt === 1 ? "Connecting to the host…" : `Connecting to the host… (try ${attempt} of ${JOIN_ATTEMPTS})`);
-    const connection = peer.connect(hostId, { reliable: true, serialization: "json" });
-    let done = false;
-    let timer = 0;
-    const finish = (error) => {
-      if (done) return;
-      done = true;
-      window.clearTimeout(timer);
-      peer.off("error", onPeerError);
-      if (!error) {
-        resolve(connection);
-        return;
-      }
-      try {
-        connection.close();
-      } catch {
-        // Already closed.
-      }
-      reject(error);
+function hostIsPresent(channel) {
+  return Object.keys(channel.presenceState()).includes(HOST);
+}
+
+async function waitFor(condition, timeoutMs, stepMs = 300) {
+  const end = Date.now() + timeoutMs;
+  while (Date.now() < end) {
+    if (condition()) return true;
+    await new Promise((resolve) => window.setTimeout(resolve, stepMs));
+  }
+  return condition();
+}
+
+function makeDestroy(client, channel, beforeClose) {
+  let destroyed = false;
+  return () => {
+    if (destroyed) return;
+    destroyed = true;
+    beforeClose?.();
+    Promise.resolve(client.removeChannel(channel))
+      .catch(() => {})
+      .finally(() => Promise.resolve(client.disconnect()).catch(() => {}));
+  };
+}
+
+const waitForSync = (synced) => Promise.race([synced, new Promise((resolve) => window.setTimeout(resolve, PRESENCE_WAIT_MS))]);
+
+export async function openRoom({ onConnection, onError, onStatus }) {
+  if (!isOnlineConfigured()) throw new Error(NOT_CONFIGURED_MESSAGE);
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const code = randomCode(CODE_LENGTH);
+    const client = createClient();
+    const links = new Map();
+    let channel;
+    let giveUpTimer = 0;
+    let current = "online";
+    const send = (envelope) => {
+      channel?.send({ type: "broadcast", event: EVENT, payload: { from: HOST, ...envelope } });
     };
-    const fail = (message, retryable = true) => finish(Object.assign(new Error(message), { retryable }));
-    function onPeerError(error) {
-      if (error.type === "peer-unavailable") fail("No room found with that code. Check the link or code, and make sure the host is still on the room screen.", false);
-      else if (error.type === "webrtc" || error.type === "negotiation-failed") fail(DIRECT_LINK_MESSAGE);
+    const congested = () => (client.conn?.bufferedAmount ?? 0) > MAX_BUFFERED_BYTES;
+    const reportStatus = (state) => {
+      if (state === current) return;
+      current = state;
+      window.clearTimeout(giveUpTimer);
+      if (state === "reconnecting") giveUpTimer = window.setTimeout(() => onError?.(new Error("lost-signaling")), RECONNECT_GIVE_UP_MS);
+      onStatus?.(state);
+    };
+    const linkFor = (guestId) => {
+      let link = links.get(guestId);
+      if (link) return link;
+      link = new Link({
+        transmit: (envelope) => send({ to: guestId, ...envelope }),
+        congested,
+        sendToAll: (message) => send({ to: EVERYONE, d: message }),
+      });
+      link.on("close", () => links.delete(guestId));
+      links.set(guestId, link);
+      onConnection(link);
+      return link;
+    };
+
+    let joined;
+    try {
+      joined = await joinChannel(client, code, HOST, {
+        onBroadcast: (payload) => {
+          if (payload.to !== HOST || typeof payload.from !== "string" || payload.from === HOST) return;
+          if (payload.k === "bye") links.get(payload.from)?.close(false);
+          // The first message from an unknown guest opens its link.
+          else if (payload.d && typeof payload.d === "object") linkFor(payload.from).emit("data", payload.d);
+        },
+        onLeave: (key) => links.get(key)?.close(false),
+        onStatus: reportStatus,
+      });
+    } catch (error) {
+      client.disconnect();
+      throw error;
     }
-    timer = window.setTimeout(() => {
-      const state = connection.peerConnection?.iceConnectionState;
-      fail(state === undefined || state === "new" ? SIGNALING_MESSAGE : DIRECT_LINK_MESSAGE);
-    }, CONNECT_TIMEOUT_MS);
-    peer.on("error", onPeerError);
-    connection.on("open", () => finish());
-    connection.on("error", () => fail(DIRECT_LINK_MESSAGE));
-    connection.on("close", () => fail(DIRECT_LINK_MESSAGE));
-  });
+    channel = joined.channel;
+    const destroy = makeDestroy(client, channel, () => {
+      window.clearTimeout(giveUpTimer);
+      for (const link of [...links.values()]) link.close();
+    });
+
+    await waitForSync(joined.synced);
+    if (hostIsPresent(channel)) {
+      // Another host already owns this code; try a different one.
+      destroy();
+      continue;
+    }
+    channel.track({ role: HOST });
+    return { code, peer: { destroy } };
+  }
+  throw new Error("Could not create a room. Please try again.");
 }
 
 export async function joinRoom(code, { onStatus } = {}) {
-  onStatus?.("Contacting the matchmaking server…");
-  const peer = await new Promise((resolve, reject) => {
-    const candidate = new Peer(`${ROOM_PREFIX}guest-${randomCode(8)}`, PEER_OPTIONS);
-    const timer = window.setTimeout(() => {
-      candidate.destroy();
-      reject(new Error(SIGNALING_MESSAGE));
-    }, SERVER_TIMEOUT_MS);
-    const onError = () => {
-      window.clearTimeout(timer);
-      candidate.destroy();
-      reject(new Error(SIGNALING_MESSAGE));
-    };
-    candidate.once("error", onError);
-    candidate.once("open", () => {
-      window.clearTimeout(timer);
-      candidate.off("error", onError);
-      resolve(candidate);
+  if (!isOnlineConfigured()) throw new Error(NOT_CONFIGURED_MESSAGE);
+  onStatus?.("Contacting the online server…");
+  const client = createClient();
+  const guestId = randomCode(10);
+  let link = null;
+  let channel;
+  const congested = () => (client.conn?.bufferedAmount ?? 0) > MAX_BUFFERED_BYTES;
+  const transmit = (envelope) => {
+    channel?.send({ type: "broadcast", event: EVENT, payload: { from: guestId, to: HOST, ...envelope } });
+  };
+  let joined;
+  try {
+    joined = await joinChannel(client, code, guestId, {
+      onBroadcast: (payload) => {
+        if (!link || payload.from !== HOST || (payload.to !== guestId && payload.to !== EVERYONE)) return;
+        if (payload.k === "bye") link.close(false);
+        else if (payload.d && typeof payload.d === "object") link.emit("data", payload.d);
+      },
+      onLeave: (key) => {
+        if (key === HOST) link?.close(false);
+      },
+      onStatus: (state) => {
+        if (state === "reconnecting") onStatus?.("Reconnecting…");
+      },
     });
-  });
-
-  let lastError = new Error(DIRECT_LINK_MESSAGE);
-  for (let attempt = 1; attempt <= JOIN_ATTEMPTS; attempt += 1) {
-    try {
-      const connection = await connectOnce(peer, ROOM_PREFIX + code, { onStatus, attempt });
-      return { peer, connection };
-    } catch (error) {
-      lastError = error;
-      if (error.retryable === false || peer.destroyed) break;
-    }
+  } catch (error) {
+    client.disconnect();
+    throw error;
   }
-  peer.destroy();
-  throw lastError;
+  channel = joined.channel;
+  const destroy = makeDestroy(client, channel, () => link?.close());
+
+  onStatus?.("Looking for the room…");
+  await waitForSync(joined.synced);
+  if (!(await waitFor(() => hostIsPresent(channel), 4000))) {
+    destroy();
+    throw Object.assign(new Error(NO_ROOM_MESSAGE), { retryable: false });
+  }
+  channel.track({ role: "guest" });
+  link = new Link({ transmit, congested });
+  return { peer: { destroy }, connection: link };
 }
