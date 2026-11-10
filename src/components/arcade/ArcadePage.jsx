@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Icon from "../builder/Icon";
 import ByteBrawl from "./ByteBrawlGame";
-import { readInviteCode } from "./byteBrawlNet";
+import BoardGame from "./BoardGame";
+import { isBoardKind } from "./boardEngine";
+import { readBoardInvite, readInviteCode } from "./byteBrawlNet";
 import BombermanGame from "./games/BombermanGame";
 import MinesweeperGame from "./games/MinesweeperGame";
 import PacmanGame from "./games/PacmanGame";
@@ -13,6 +15,8 @@ const GAMES = [
   { id: "pacman", name: "Pac-Man", icon: "pacman", description: "The classic 28×31 maze with four ghost personalities, scatter and chase waves, fruit, and faster levels.", controls: "WASD to move · P to pause" },
   { id: "snake", name: "Snake", icon: "snake", description: "Smooth snake with combos, bonus bytes, power-ups, obstacle layouts, and level goals.", controls: "WASD to move · P to pause" },
   { id: "code-arena", name: "Byte Brawl", icon: "platform", description: "Gun Mayhem-style brawler with a 30-mission campaign, bosses, online rooms, and power-up drops. Every 3 levels a new enemy type with its own skill appears — 13 in all.", controls: "A/D move · W jump · S drop · J fire · P pause" },
+  { id: "tic-tac-toe", name: "Tic Tac Toe", icon: "ttt", description: "Three in a row wins. Play the computer, a friend on the same screen, or an online room where you can switch games without reconnecting.", controls: "Click a square · 1–9 keys" },
+  { id: "connect-4", name: "Connect 4", icon: "connect4", description: "Drop discs and line up four. Play the computer, pass and play, or an online room shared with Tic Tac Toe.", controls: "Click a column · 1–7 keys" },
 ];
 
 const DIFFICULTIES = [
@@ -27,6 +31,8 @@ const GAME_COMPONENTS = {
   pacman: PacmanGame,
   snake: SnakeGame,
   "code-arena": ByteBrawl,
+  "tic-tac-toe": BoardGame,
+  "connect-4": BoardGame,
 };
 
 function GameCard({ game, onPlay }) {
@@ -44,6 +50,18 @@ function GameCard({ game, onPlay }) {
               <path d="M3 19h7m4 0h7M5 19v-5l4-3 3 2 3-6 4 3v9" />
               <circle cx="12" cy="5" r="2" />
             </svg>
+          ) : game.icon === "ttt" ? (
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
+            </svg>
+          ) : game.icon === "connect4" ? (
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <circle cx="8.5" cy="8.5" r="1.6" />
+              <circle cx="15.5" cy="8.5" r="1.6" />
+              <circle cx="8.5" cy="15.5" r="1.6" />
+              <circle cx="15.5" cy="15.5" r="1.6" />
+            </svg>
           ) : game.icon === "bomb" ? "*" : game.icon === "snake" ? ">" : "#"}
         </span>
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-600">v2.0 / playable</span>
@@ -60,26 +78,34 @@ function GameCard({ game, onPlay }) {
 
 export default function ArcadePage({ onBack }) {
   const [initialInvite] = useState(() => readInviteCode());
-  const [selectedGame, setSelectedGame] = useState(initialInvite ? "code-arena" : "");
+  const [initialBoardInvite] = useState(() => readBoardInvite());
+  const [selectedGame, setSelectedGame] = useState(initialInvite ? "code-arena" : initialBoardInvite ? (isBoardKind(initialBoardInvite.game) ? initialBoardInvite.game : "tic-tac-toe") : "");
   const [difficulty, setDifficulty] = useState("easy");
   const [level, setLevel] = useState(1);
   const [brawlSetup, setBrawlSetup] = useState(() => (initialInvite ? { mode: "online", invite: { code: initialInvite, nonce: 0 } } : null));
+  const [boardInvite, setBoardInvite] = useState(() => (initialBoardInvite ? { code: initialBoardInvite.code, nonce: 0 } : null));
   const chosenGame = GAMES.find((game) => game.id === selectedGame);
 
-  // An invite link (#/arcade/join/CODE) drops the player straight into that room, whether the page was just
-  // loaded or the link is opened while the arcade is already showing. The hash is then reset so a refresh
-  // doesn't try to re-join a stale room.
+  // An invite link (#/arcade/join/CODE for Byte Brawl, #/arcade/play/CODE/GAME for board games) drops the player
+  // straight into that room, whether the page was just loaded or the link is opened while the arcade is already
+  // showing. The hash is then reset so a refresh doesn't try to re-join a stale room.
   useEffect(() => {
     const consumeInvite = () => {
       const code = readInviteCode();
-      if (!code) return;
+      const board = readBoardInvite();
+      if (!code && !board) return;
       window.history.replaceState(null, "", "#/arcade");
-      setSelectedGame("code-arena");
-      setBrawlSetup((current) => ({ mode: "online", invite: { code, nonce: (current?.invite?.nonce ?? 0) + 1 } }));
       setLevel(1);
+      if (code) {
+        setSelectedGame("code-arena");
+        setBrawlSetup((current) => ({ mode: "online", invite: { code, nonce: (current?.invite?.nonce ?? 0) + 1 } }));
+      } else {
+        setSelectedGame(isBoardKind(board.game) ? board.game : "tic-tac-toe");
+        setBoardInvite((current) => ({ code: board.code, nonce: (current?.nonce ?? 0) + 1 }));
+      }
     };
     // The initial link was already read into state above; only clean the URL.
-    if (readInviteCode()) window.history.replaceState(null, "", "#/arcade");
+    if (readInviteCode() || readBoardInvite()) window.history.replaceState(null, "", "#/arcade");
     window.addEventListener("hashchange", consumeInvite);
     return () => window.removeEventListener("hashchange", consumeInvite);
   }, []);
@@ -87,6 +113,7 @@ export default function ArcadePage({ onBack }) {
   const returnToGames = useCallback(() => {
     setSelectedGame("");
     setBrawlSetup(null);
+    setBoardInvite(null);
     setLevel(1);
   }, []);
   const onLevelAdvance = useCallback(() => setLevel((current) => current + 1), []);
@@ -98,9 +125,10 @@ export default function ArcadePage({ onBack }) {
     setBrawlSetup(null);
     setLevel(1);
   }, []);
-  const gameProps = { difficulty, level, onBack: returnToGames, onLevelAdvance, setup: brawlSetup, onSetup: startBrawl, onMenu: brawlMenu };
+  const gameProps = { difficulty, level, onBack: returnToGames, onLevelAdvance, setup: brawlSetup, onSetup: startBrawl, onMenu: brawlMenu, kind: selectedGame, onKindChange: setSelectedGame, invite: boardInvite };
   const Game = GAME_COMPONENTS[selectedGame];
-  const gameKey = `${selectedGame}-${difficulty}-${level}-${brawlSetup?.invite?.nonce ?? 0}`;
+  // Board games share one component across both titles (and ignore difficulty changes) so an online room survives switching games.
+  const gameKey = isBoardKind(selectedGame) ? "board" : `${selectedGame}-${difficulty}-${level}-${brawlSetup?.invite?.nonce ?? 0}`;
 
   return (
     <main className="mx-auto max-w-[1280px] px-4 py-8 sm:px-8">
@@ -112,7 +140,7 @@ export default function ArcadePage({ onBack }) {
           </p>
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{chosenGame ? chosenGame.name : "The Code Arcade"}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-            {chosenGame ? chosenGame.description : "Five games rebuilt as a terminal playground. Pick a difficulty and play through progressively harder levels."}
+            {chosenGame ? chosenGame.description : "Seven games rebuilt as a terminal playground, including two-player Tic Tac Toe and Connect 4. Pick a difficulty and play through progressively harder levels."}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
@@ -134,7 +162,7 @@ export default function ArcadePage({ onBack }) {
         <div className="rounded-2xl border border-white/10 bg-[#090b10]/90 p-4 sm:p-6">
           <div className="mb-4 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-wider">
             <span className="rounded border border-cyan-400/20 bg-cyan-400/5 px-2 py-1 text-cyan-200">{difficulty}</span>
-            <span className="rounded border border-white/10 bg-white/[0.03] px-2 py-1 text-zinc-400">level {level}</span>
+            {!isBoardKind(selectedGame) && <span className="rounded border border-white/10 bg-white/[0.03] px-2 py-1 text-zinc-400">level {level}</span>}
             <span className={`ml-auto ${DIFFICULTIES.find((item) => item.id === difficulty)?.color}`}>difficulty: {difficulty}</span>
           </div>
           <Game key={gameKey} {...gameProps} />
@@ -148,7 +176,7 @@ export default function ArcadePage({ onBack }) {
             {GAMES.map((game) => <GameCard key={game.id} game={game} onPlay={() => setSelectedGame(game.id)} />)}
           </div>
           <p className="mt-6 border-t border-white/5 pt-4 font-mono text-[11px] text-zinc-600">
-            // single-player games run locally in your browser · Byte Brawl online uses peer-to-peer rooms
+            // single-player games run locally in your browser · online rooms (Byte Brawl, Tic Tac Toe, Connect 4) relay through Supabase Realtime
           </p>
         </>
       )}

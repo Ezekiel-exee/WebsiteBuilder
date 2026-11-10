@@ -5,6 +5,7 @@ import { RealtimeClient } from "@supabase/realtime-js";
 // connection-like surface (`send`, `close`, `on("data" | "close")`, `open`) the lobby and match code use.
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const DEFAULT_CHANNEL = "bytebrawl";
 const EVENT = "m";
 const HOST = "host";
 const EVERYONE = "*";
@@ -62,19 +63,26 @@ export function normalizeCode(value) {
 
 // Accepts a bare code or a whole pasted invite link.
 export function extractCode(value) {
-  const link = String(value).match(/join\/([A-Za-z0-9]+)/);
+  const link = String(value).match(/(?:join|play)\/([A-Za-z0-9]+)/);
   return normalizeCode(link ? link[1] : String(value));
 }
 
-export function inviteLink(code) {
+// Byte Brawl rooms use `#/arcade/join/CODE`; the board-game room uses `#/arcade/play/CODE/GAME`.
+export function inviteLink(code, game = "") {
   const { origin, pathname } = window.location;
-  return `${origin}${pathname}#/arcade/join/${code}`;
+  return game ? `${origin}${pathname}#/arcade/play/${code}/${game}` : `${origin}${pathname}#/arcade/join/${code}`;
 }
 
 export function readInviteCode() {
   const match = window.location.hash.match(/^#\/arcade\/join\/([A-Za-z0-9]+)\/?$/);
   const code = match ? normalizeCode(match[1]) : "";
   return code.length === CODE_LENGTH ? code : "";
+}
+
+export function readBoardInvite() {
+  const match = window.location.hash.match(/^#\/arcade\/play\/([A-Za-z0-9]+)(?:\/([a-z0-9-]+))?\/?$/);
+  const code = match ? normalizeCode(match[1]) : "";
+  return code.length === CODE_LENGTH ? { code, game: match[2] || "" } : null;
 }
 
 // Sending on a closed link throws; callers treat a false result as "peer is gone".
@@ -153,9 +161,9 @@ class Link {
 }
 
 // Joins the room's channel. Resolves once subscribed; `onStatus` reports later connection drops and recoveries.
-function joinChannel(client, code, presenceKey, { onBroadcast, onLeave, onStatus }) {
+function joinChannel(client, channelName, code, presenceKey, { onBroadcast, onLeave, onStatus }) {
   return new Promise((resolve, reject) => {
-    const channel = client.channel(`bytebrawl:${code}`, {
+    const channel = client.channel(`${channelName}:${code}`, {
       config: { broadcast: { self: false, ack: false }, presence: { key: presenceKey, enabled: true } },
     });
     let resolveSynced;
@@ -236,7 +244,7 @@ function makeDestroy(client, channel, beforeClose) {
 
 const waitForSync = (synced) => Promise.race([synced, new Promise((resolve) => window.setTimeout(resolve, PRESENCE_WAIT_MS))]);
 
-export async function openRoom({ onConnection, onError, onStatus }) {
+export async function openRoom({ onConnection, onError, onStatus, channelName = DEFAULT_CHANNEL }) {
   if (!isOnlineConfigured()) throw new Error(NOT_CONFIGURED_MESSAGE);
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const code = randomCode(CODE_LENGTH);
@@ -272,7 +280,7 @@ export async function openRoom({ onConnection, onError, onStatus }) {
 
     let joined;
     try {
-      joined = await joinChannel(client, code, HOST, {
+      joined = await joinChannel(client, channelName, code, HOST, {
         onBroadcast: (payload) => {
           if (payload.to !== HOST || typeof payload.from !== "string" || payload.from === HOST) return;
           if (payload.k === "bye") links.get(payload.from)?.close(false);
@@ -304,7 +312,7 @@ export async function openRoom({ onConnection, onError, onStatus }) {
   throw new Error("Could not create a room. Please try again.");
 }
 
-export async function joinRoom(code, { onStatus } = {}) {
+export async function joinRoom(code, { onStatus, channelName = DEFAULT_CHANNEL } = {}) {
   if (!isOnlineConfigured()) throw new Error(NOT_CONFIGURED_MESSAGE);
   onStatus?.("Contacting the online server…");
   const client = createClient();
@@ -317,7 +325,7 @@ export async function joinRoom(code, { onStatus } = {}) {
   };
   let joined;
   try {
-    joined = await joinChannel(client, code, guestId, {
+    joined = await joinChannel(client, channelName, code, guestId, {
       onBroadcast: (payload) => {
         if (!link || payload.from !== HOST || (payload.to !== guestId && payload.to !== EVERYONE)) return;
         if (payload.k === "bye") link.close(false);

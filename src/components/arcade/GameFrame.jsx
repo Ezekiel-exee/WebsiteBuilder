@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { TouchDock, useTouchControls } from "./TouchControls";
 
 // `touch` describes the on-screen gamepad shown on touch devices: { dpad, buttons, onPause, extra }.
-export function GameFrame({ title, description, status, metrics, onBack, backLabel = "< games", onRestart, canRestart = true, onKeyDown, onKeyUp, controls, touch, children }) {
+export function GameFrame({ title, description, status, metrics, onBack, backLabel = "< games", onRestart, canRestart = true, extraActions, onKeyDown, onKeyUp, controls, touch, children }) {
   const frameRef = useRef(null);
   const restartRef = useRef(null);
   const touchControls = useTouchControls();
@@ -45,6 +45,7 @@ export function GameFrame({ title, description, status, metrics, onBack, backLab
           <button type="button" onClick={onBack} className="rounded-lg border border-white/10 px-3 py-2 font-mono text-xs text-zinc-300 transition hover:border-white/20 hover:bg-white/5">
             {backLabel}
           </button>
+          {extraActions}
           {canRestart && (
             <button type="button" onClick={onRestart} className="rounded-lg border border-cyan-400/25 bg-cyan-400/10 px-3 py-2 font-mono text-xs text-cyan-200 transition hover:bg-cyan-400/15">
               $ restart

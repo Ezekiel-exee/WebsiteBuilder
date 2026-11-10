@@ -422,8 +422,13 @@ function OnlineMatch({ ui, role, scene, myId, code, net, handlerRef, onRematch, 
       description={`Room ${code} · ${rivals ? "Rivals: last player standing wins." : "Allies: knock out every bot together."}`}
       status={status}
       metrics={[{ label: "ROOM", value: code }, { label: "STOCKS", value: hud.stocks }, { label: "DAMAGE", value: `${hud.damage}%` }, { label: rivals ? "RIVAL STOCKS" : "BOT STOCKS", value: hud.foes }, { label: "K.O.s", value: hud.knockouts }, { label: "SCORE", value: hud.score }]}
-      onBack={onLeave}
-      backLabel="< leave"
+      onBack={onLobby}
+      backLabel="< lobby"
+      extraActions={
+        <button type="button" onClick={onLeave} className="rounded-lg border border-white/10 px-3 py-2 font-mono text-xs text-zinc-300 transition hover:border-white/20 hover:bg-white/5">
+          leave room
+        </button>
+      }
       onRestart={onRematch}
       canRestart={host}
       onKeyDown={onKeyDown}
@@ -454,7 +459,11 @@ function OnlineMatch({ ui, role, scene, myId, code, net, handlerRef, onRematch, 
                   <button type="button" onClick={onLobby} className="rounded-lg border border-white/10 px-4 py-2 font-mono text-xs text-zinc-300 transition hover:bg-white/5">$ back to lobby</button>
                 </>
               ) : (
-                <p className="font-mono text-xs text-zinc-500">waiting for the host to start a rematch…</p>
+                <>
+                  <p className="w-full font-mono text-xs text-zinc-500">waiting for the host to start a rematch…</p>
+                  <button type="button" onClick={onLobby} className="rounded-lg border border-white/10 px-4 py-2 font-mono text-xs text-zinc-300 transition hover:bg-white/5">$ back to lobby</button>
+                  <button type="button" onClick={onLeave} className="rounded-lg border border-white/10 px-4 py-2 font-mono text-xs text-zinc-300 transition hover:bg-white/5">leave room</button>
+                </>
               )}
             </div>
           </div>
@@ -482,6 +491,7 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit, invite }) {
   const net = useRef({ peer: null, conns: new Map(), hostConn: null, lastSeen: 0 }).current;
   const room = useRef({ players: [], settings: DEFAULT_SETTINGS, difficulty, phase: "menu" }).current;
   const handlerRef = useRef(null);
+  const lobbyRef = useRef(null);
   // Bumped whenever a host/join attempt starts or is torn down, so a slow attempt that finishes late can tell it is stale.
   const attemptRef = useRef(0);
 
@@ -595,6 +605,8 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit, invite }) {
           sendAll({ t: "lobby", players: room.players, settings: room.settings, difficulty: room.difficulty });
         } else if (message.t === "input" && connection.playerId !== undefined) {
           handlerRef.current?.(connection.playerId, message);
+        } else if (message.t === "lobby" && connection.playerId !== undefined && room.phase === "playing") {
+          lobbyRef.current?.();
         }
       });
       connection.on("close", () => removePlayer(connection.playerId));
@@ -725,6 +737,10 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit, invite }) {
     sendAll({ t: "toLobby" });
     sendAll({ t: "lobby", players: room.players, settings: room.settings, difficulty: room.difficulty });
   };
+  lobbyRef.current = backToLobby;
+  const requestLobby = () => {
+    safeSend(net.hostConn, { t: "lobby" });
+  };
 
   if (phase === "menu") {
     return <OnlineMenu name={name} setName={setName} joinCode={joinCode} setJoinCode={setJoinCode} busy={busy} status={status} inviteCode={invite?.code} error={error} configured={isOnlineConfigured()} onHost={hostRoom} onJoin={() => joinExistingRoom()} onBack={onExit} />;
@@ -733,6 +749,6 @@ export default function ByteBrawlOnline({ ui, difficulty, onExit, invite }) {
     return <Lobby role={role} code={code} players={players} settings={settings} difficulty={roomDifficulty} myId={myId} signal={signal} onChange={changeSettings} onStart={startMatch} onLeave={() => resetToMenu("")} />;
   }
   return match ? (
-    <OnlineMatch key={match.key} ui={ui} role={role} scene={match.scene} myId={myId} code={code} net={net} handlerRef={handlerRef} onRematch={startMatch} onLobby={backToLobby} onLeave={() => resetToMenu("")} />
+    <OnlineMatch key={match.key} ui={ui} role={role} scene={match.scene} myId={myId} code={code} net={net} handlerRef={handlerRef} onRematch={startMatch} onLobby={role === "host" ? backToLobby : requestLobby} onLeave={() => resetToMenu("")} />
   ) : null;
 }
